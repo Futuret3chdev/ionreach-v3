@@ -28,4 +28,17 @@
     color: var(--color-fg);
     font-family: var(--font-sans);
   }
+
+  html.ios-full,
+  html.ios-full body {
+    height: var(--app-h, 100dvh);
+    overflow: hidden;
+    background: #07090e;
+  }
+
+  html.ios-full body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+  }
 }

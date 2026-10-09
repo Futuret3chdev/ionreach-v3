@@ -141,7 +141,7 @@ export function Ionreach() {
   const lastPick = useRef({ id: 0, at: 0 });
   const [pickMode, setPickMode] = useState(false);
   const [tray, setTray] = useState<Tray>("base");
-  const [chrome, setChrome] = useState(true);
+  const [chrome, setChrome] = useState(false);
   const [menuChrome, setMenuChrome] = useState(true);
   const [menuTool, setMenuTool] = useState<MenuTool | null>(null);
   const [settingsTab, setSettingsTab] = useState<"wallet" | "saves">("wallet");
@@ -181,9 +181,21 @@ export function Ionreach() {
   }, []);
 
   useEffect(() => {
-    const onFull = () => setFull(!!document.fullscreenElement);
+    const doc = document as Document & { webkitFullscreenElement?: Element };
+    const onFull = () => setFull(!!(document.fullscreenElement || doc.webkitFullscreenElement || document.documentElement.classList.contains("ios-full")));
     document.addEventListener("fullscreenchange", onFull);
-    return () => document.removeEventListener("fullscreenchange", onFull);
+    document.addEventListener("webkitfullscreenchange", onFull);
+    const onResize = () => {
+      if (document.documentElement.classList.contains("ios-full")) fitScreen();
+    };
+    window.visualViewport?.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("scroll", onResize);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFull);
+      document.removeEventListener("webkitfullscreenchange", onFull);
+      window.visualViewport?.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("scroll", onResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -664,10 +676,50 @@ export function Ionreach() {
     if (!reduce && phaseRef.current === "title") void v.play().catch(() => undefined);
   }
 
-  function toggleFull() {
+  function fitScreen() {
+    const h = window.visualViewport?.height ?? window.innerHeight;
+    document.documentElement.style.setProperty("--app-h", `${Math.round(h)}px`);
+  }
+
+  function enterIphoneFull() {
+    document.documentElement.classList.add("ios-full");
+    fitScreen();
+    setFull(true);
+    window.scrollTo(0, 0);
+    requestAnimationFrame(() => window.scrollTo(0, 1));
+  }
+
+  function leaveIphoneFull() {
+    document.documentElement.classList.remove("ios-full");
+    setFull(!!(document.fullscreenElement || (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement));
+  }
+
+  async function toggleFull() {
     const root = document.documentElement;
-    if (!document.fullscreenElement) void root.requestFullscreen?.().catch(() => undefined);
-    else void document.exitFullscreen?.().catch(() => undefined);
+    const doc = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => Promise<void> };
+    const native = document.fullscreenElement || doc.webkitFullscreenElement;
+    if (native) {
+      const exit = document.exitFullscreen?.bind(document) ?? doc.webkitExitFullscreen?.bind(document);
+      await exit?.().catch(() => undefined);
+      leaveIphoneFull();
+      return;
+    }
+    if (root.classList.contains("ios-full")) {
+      leaveIphoneFull();
+      return;
+    }
+    const el = root as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> };
+    const req = el.requestFullscreen?.bind(el) ?? el.webkitRequestFullscreen?.bind(el);
+    if (req) {
+      try {
+        await req();
+        setFull(true);
+        return;
+      } catch {
+        /* iPhone Safari rejects fullscreen on anything that is not a video. */
+      }
+    }
+    enterIphoneFull();
   }
 
   function toggleMute() {
@@ -694,7 +746,7 @@ export function Ionreach() {
   const battle = phase !== "title";
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden bg-bg text-fg">
+    <main className={"relative h-dvh w-full overflow-hidden bg-bg text-fg " + (full ? "h-[var(--app-h,100dvh)]" : "")}>
       <video
         ref={vidRef}
         className={battle ? "hidden" : "absolute inset-0 h-full w-full object-cover"}
@@ -706,9 +758,14 @@ export function Ionreach() {
         preload="auto"
       />
       {!battle && <div className="absolute inset-0 bg-bg/45" />}
-      {!battle && (
-        <div className="absolute inset-0 z-10 flex flex-col">
-          <header className={(menuChrome ? "flex " : "hidden ") + "h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[#1e3a5f] bg-[#07101c]/95 px-2"}>
+      {!battle && !menuChrome && (
+        <button type="button" onClick={() => setMenuChrome(true)} className="absolute top-3 right-3 z-10 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
+          Menu
+        </button>
+      )}
+      {!battle && menuChrome && (
+        <div className="absolute inset-0 z-10 flex flex-col bg-[#07101c]/95">
+          <header className="flex h-12 shrink-0 items-center gap-2 overflow-x-auto px-3">
             <div className="min-w-0">
               <p className="truncate font-display text-sm leading-tight">IONREACH</p>
               <p className="truncate text-[11px] tracking-[0.16em] text-ion">GLASS HORIZON</p>
@@ -719,55 +776,53 @@ export function Ionreach() {
             <button type="button" onClick={toggleFull} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Full screen">
               {full ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
             </button>
-            <button type="button" onClick={() => setMenuChrome(false)} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Hide panels">
+            <button type="button" onClick={() => setMenuChrome(false)} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Hide menu">
               <EyeOff className="size-4" />
             </button>
           </header>
-          <div className="relative min-h-0 flex-1">
-            {!menuChrome && (
-              <button type="button" onClick={() => setMenuChrome(true)} className="absolute top-2 right-2 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
-                Show panels
-              </button>
-            )}
-          </div>
-          <footer className={(menuChrome ? "" : "hidden ") + "shrink-0 border-t border-[#1e3a5f] bg-[#07101c]/95"}>
-            <div className="flex gap-1 overflow-x-auto px-2 py-1">
-              {(
-                [
-                  ["campaign", "Campaign"],
-                  ["multi", "Multiplayer"],
-                  ["settings", "Settings"],
-                  ["manual", "Manual"],
-                  ["records", "Achievements"],
-                  ["trailer", "Trailer"],
-                ] as const
-              ).map(([id, label]) => (
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {!menuTool ? (
+              <nav className="flex flex-1 flex-col justify-center gap-2 px-4 pb-8">
+                {(
+                  [
+                    ["campaign", "Campaign"],
+                    ["multi", "Multiplayer"],
+                    ["settings", "Settings"],
+                    ["manual", "Manual"],
+                    ["records", "Achievements"],
+                    ["trailer", "Trailer"],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      if (id === "settings") setSettingsTab("wallet");
+                      setMenuTool(id);
+                    }}
+                    className="min-h-12 border border-[#9aabba] bg-gradient-to-b from-[#3a4654] to-[#141a22] font-display text-lg tracking-[0.22em] uppercase"
+                  >
+                    {label}
+                  </button>
+                ))}
                 <button
-                  key={id}
                   type="button"
                   onClick={() => {
-                    if (id === "settings") setSettingsTab("wallet");
-                    setMenuTool((cur) => (cur === id ? null : id));
+                    setSettingsTab("saves");
+                    setMenuTool("settings");
                   }}
-                  className={"min-h-9 shrink-0 border px-2 font-display text-xs " + (menuTool === id ? "border-ion bg-[#12343a] text-ion" : "border-line text-muted")}
+                  className="min-h-12 border border-[#9aabba] bg-gradient-to-b from-[#3a4654] to-[#141a22] font-display text-lg tracking-[0.22em] uppercase"
                 >
-                  {menuTool === id ? "Hide " : "Show "}
-                  {label}
+                  Load
                 </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  setSettingsTab("saves");
-                  setMenuTool("settings");
-                }}
-                className={"min-h-9 shrink-0 border px-2 font-display text-xs " + (menuTool === "settings" && settingsTab === "saves" ? "border-ion bg-[#12343a] text-ion" : "border-line text-muted")}
-              >
-                Load
+              </nav>
+            ) : (
+              <button type="button" onClick={() => setMenuTool(null)} className="m-3 min-h-11 self-start border border-line px-3 font-display">
+                Back
               </button>
-            </div>
+            )}
             {menuTool === "campaign" && (
-              <div className="max-h-[42vh] overflow-y-auto px-2 pb-2">
+              <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
                 <div className="flex gap-2 overflow-x-auto">
                   {COUNTRY_IDS.map((id) => {
                     const chapters = countryOf(id);
@@ -849,7 +904,7 @@ export function Ionreach() {
               />
             )}
             {menuTool === "manual" && (
-              <ul className="max-h-[32vh] space-y-1 overflow-y-auto px-3 pb-2 text-xs text-muted">
+              <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-3 text-sm text-muted">
                 <li>The top bar and this dock can be hidden. Show panels brings them back.</li>
                 <li>Select on the battle bar draws a box. Shift-click adds. Drag pans when Select is off.</li>
                 <li>Show or hide Command, Selection, Map, and Powers under the map.</li>
@@ -858,7 +913,7 @@ export function Ionreach() {
               </ul>
             )}
             {menuTool === "records" && (
-              <ul className="max-h-[32vh] space-y-1 overflow-y-auto px-2 pb-2">
+              <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 pb-3">
                 {allBadges().map(({ badge, owned }) => (
                   <li key={badge.id} className={owned ? "border border-gold/50 px-2 py-1" : "border border-line px-2 py-1 opacity-50"}>
                     <p className="font-display text-sm">{badge.name}</p>
@@ -868,9 +923,9 @@ export function Ionreach() {
               </ul>
             )}
             {menuTool === "trailer" && (
-              <p className="px-3 pb-2 text-xs text-muted">The film behind this menu is the trailer. Use sound on the top bar. Full screen hides the browser chrome.</p>
+              <p className="px-3 pb-3 text-sm text-muted">The film is behind this menu. Hide the menu to watch it. Full screen covers the browser, including on iPhone.</p>
             )}
-          </footer>
+          </div>
         </div>
       )}
 
@@ -981,8 +1036,26 @@ export function Ionreach() {
       )}
 
       {battle && (
-        <div className="absolute inset-0 flex flex-col bg-bg">
-          <header className={(chrome ? "flex " : "hidden ") + "h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[#1e3a5f] bg-[#07101c] px-2"}>
+        <div className="absolute inset-0 bg-bg">
+          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
+          <div className="pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center px-3">
+            <div className="flex flex-col items-center gap-1">
+              {hud?.low && <p className="bg-ember px-3 py-1 font-display text-bg">Grid starved</p>}
+              {hud?.attackArm && <p className="bg-ion px-3 py-1 font-display text-bg">Attack-move — choose ground</p>}
+              {hud?.abilityArm === "strike" && <p className="bg-gold px-3 py-1 font-display text-bg">Ion strike — choose the ground</p>}
+              {hud?.abilityArm === "nuke" && <p className="bg-ember px-3 py-1 font-display text-bg">DEFCON — choose the ground</p>}
+              {hud?.paused && <p className="bg-gold px-3 py-1 font-display text-bg">Paused</p>}
+              {flyover && phase === "battle" && <p className="font-display text-xl text-fg">{introLine}</p>}
+              {toasts[0] && <p className="border border-gold bg-bg/90 px-3 py-1 font-display text-gold">Achievement · {toasts[0].name}</p>}
+            </div>
+          </div>
+          {!chrome && (
+            <button type="button" onClick={() => setChrome(true)} className="absolute top-3 right-3 z-20 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
+              Menu
+            </button>
+          )}
+          <div className={(chrome ? "flex " : "hidden ") + "absolute inset-0 z-10 flex-col bg-[#07101c]/95"}>
+          <header className="flex h-12 shrink-0 items-center gap-2 overflow-x-auto px-2">
               <Flag id={chapterById(chapterRef.current).countryId} className="h-6 w-9 shrink-0" />
               <div className="min-w-0">
                 <p className="truncate font-display text-xs leading-tight">
@@ -1041,30 +1114,11 @@ export function Ionreach() {
                   Skip
                 </button>
               )}
-              <button type="button" onClick={() => setChrome(false)} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Hide panels">
+              <button type="button" onClick={() => setChrome(false)} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Hide menu">
                 <EyeOff className="size-4" />
               </button>
             </header>
-          <div className="relative min-h-0 flex-1">
-            <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
-            <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center px-3">
-              <div className="flex flex-col items-center gap-1">
-                {hud?.low && <p className="bg-ember px-3 py-1 font-display text-bg">Grid starved</p>}
-                {hud?.attackArm && <p className="bg-ion px-3 py-1 font-display text-bg">Attack-move — choose ground</p>}
-                {hud?.abilityArm === "strike" && <p className="bg-gold px-3 py-1 font-display text-bg">Ion strike — choose the ground</p>}
-                {hud?.abilityArm === "nuke" && <p className="bg-ember px-3 py-1 font-display text-bg">DEFCON — choose the ground</p>}
-                {hud?.paused && <p className="bg-gold px-3 py-1 font-display text-bg">Paused</p>}
-                {flyover && phase === "battle" && <p className="font-display text-xl text-fg">{introLine}</p>}
-                {toasts[0] && <p className="border border-gold bg-bg/90 px-3 py-1 font-display text-gold">Achievement · {toasts[0].name}</p>}
-              </div>
-            </div>
-            {!chrome && (
-              <button type="button" onClick={() => setChrome(true)} className="absolute top-2 right-2 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
-                Show panels
-              </button>
-            )}
-          </div>
-          <footer className={(chrome ? "" : "hidden ") + "shrink-0 border-t border-[#1e3a5f] bg-[#07101c]"}>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="flex gap-1 overflow-x-auto px-2 py-1">
                 {(
                   [
@@ -1086,7 +1140,11 @@ export function Ionreach() {
                   </button>
                 ))}
               </div>
-              {tools.command && <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} />}
+              {tools.command && (
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} />
+                </div>
+              )}
               {tools.match && (
                 <div className="flex flex-wrap gap-2 px-2 pb-2">
                   <button type="button" onClick={exitMatch} className="min-h-9 border border-line px-3 font-display text-xs">Exit</button>
@@ -1129,7 +1187,8 @@ export function Ionreach() {
                   )}
                 </div>
               )}
-            </footer>
+            </div>
+          </div>
         </div>
       )}
 

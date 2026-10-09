@@ -61,7 +61,7 @@ export function SettingsPanel({
   }
 
   return (
-    <div className={dock ? "max-h-[38vh] overflow-y-auto border-t border-[#1e3a5f] bg-[#07101c]" : "fixed inset-0 z-50 flex items-end justify-center bg-bg/75 p-4 md:items-center"}>
+    <div className={dock ? "min-h-0 flex-1 overflow-y-auto bg-[#07101c]" : "fixed inset-0 z-50 flex items-end justify-center bg-bg/75 p-4 md:items-center"}>
       <div className={dock ? "w-full" : "flex max-h-[90dvh] w-full max-w-lg flex-col border border-line bg-surface"}>
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
           <div>
