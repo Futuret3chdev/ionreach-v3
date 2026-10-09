@@ -218,17 +218,87 @@ const brazil = short("brazil", {
   ["Green Scar", "The spire in the trees.", "brazil-05"],
 ]);
 
+const AUS: Pick<Chapter, "water" | "waterAmt" | "forest" | "peaks" | "sky" | "ground" | "canopy" | "trunk" | "waterFill" | "snow"> = {
+  water: "coast",
+  waterAmt: 0.72,
+  forest: 0.46,
+  peaks: 0.28,
+  sky: ["#1d3344", "#d7b56a"],
+  ground: [150, 118, 72],
+  canopy: "#6a7040",
+  trunk: "#6a4a30",
+  waterFill: "#1a6880",
+  snow: false,
+};
+
+const TIES: Record<string, { foe: string; ally: string }> = {
+  usa: { foe: "China", ally: "Australia and the United Kingdom" },
+  russia: { foe: "the United States", ally: "China" },
+  china: { foe: "Japan", ally: "Russia" },
+  australia: { foe: "China", ally: "the United States and the United Kingdom" },
+  korea: { foe: "China", ally: "Japan and the United States" },
+  japan: { foe: "China", ally: "Australia and South Korea" },
+  uk: { foe: "Russia", ally: "Australia and France" },
+  india: { foe: "China", ally: "Australia and the United Kingdom" },
+  france: { foe: "Russia", ally: "the United Kingdom and Australia" },
+  brazil: { foe: "China", ally: "Australia and the United States" },
+};
+
+function withAustralia(chapters: Chapter[]): Chapter[] {
+  const first = chapters[0];
+  const ties = TIES[first.countryId];
+  const opened = chapters.map((chapter, index) =>
+    index === 0 ? { ...chapter, video: `${chapter.countryId}-long` } : chapter,
+  );
+  const extra: Array<[string, string, string, string]> = [
+    [
+      "Melbourne Port",
+      `${ties.foe} holds the port. ${ties.ally} are on your flank.`,
+      `Melbourne. ${ties.foe} owns the docks. ${ties.ally} hold the river road with you. Take the port, do not fire on the ally column.`,
+      "The port is yours. Hudson says Sydney is the next harbour, and the ally line moves with you.",
+    ],
+    [
+      "Sydney Harbour",
+      `The bridge is the fight. ${ties.foe} is on the north shore.`,
+      `Sydney. ${ties.ally} hold the bridge. ${ties.foe} is pushing the north shore. Keep the harbour cargo moving.`,
+      "The harbour is held. Hudson says Queensland is the long coast, and the ally ships are already turning north.",
+    ],
+    [
+      "Queensland Coast",
+      `Reef road, cargo, and ${ties.foe} on the range.`,
+      `Queensland. The coast road is the only clean line. ${ties.ally} guard the cargo. Break ${ties.foe} before the range guns find the ships.`,
+      "The coast is held. This Australian front is closed.",
+    ],
+  ];
+  return [
+    ...opened,
+    ...extra.map(([theater, line, brief, hudson], i) => ({
+      ...first,
+      ...AUS,
+      id: `${first.countryId}-au${i + 1}`,
+      index: opened.length + i + 1,
+      theater,
+      line,
+      beats: [brief, line, hudson] as [string, string, string],
+      video: `${first.countryId}-${["melbourne", "sydney", "queensland"][i]}`,
+      mid: null,
+      hudson,
+      salt: first.salt + 4 + i,
+    })),
+  ];
+}
+
 export const COUNTRIES: { id: string; chapters: Chapter[] }[] = [
-  { id: "usa", chapters: usa },
-  { id: "russia", chapters: russia },
-  { id: "china", chapters: china },
-  { id: "australia", chapters: australia },
-  { id: "korea", chapters: korea },
-  { id: "japan", chapters: japan },
-  { id: "uk", chapters: uk },
-  { id: "india", chapters: india },
-  { id: "france", chapters: france },
-  { id: "brazil", chapters: brazil },
+  { id: "usa", chapters: withAustralia(usa) },
+  { id: "russia", chapters: withAustralia(russia) },
+  { id: "china", chapters: withAustralia(china) },
+  { id: "australia", chapters: withAustralia(australia) },
+  { id: "korea", chapters: withAustralia(korea) },
+  { id: "japan", chapters: withAustralia(japan) },
+  { id: "uk", chapters: withAustralia(uk) },
+  { id: "india", chapters: withAustralia(india) },
+  { id: "france", chapters: withAustralia(france) },
+  { id: "brazil", chapters: withAustralia(brazil) },
 ];
 
 export const CHAPTERS: Chapter[] = COUNTRIES.flatMap((c) => c.chapters);
