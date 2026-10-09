@@ -18,6 +18,7 @@ import {
   type TechWing,
 } from "./content";
 import { chapterById } from "./campaign";
+import type { SkirmishMap } from "./skirmish";
 import { buildMap, type BuiltMap } from "./map";
 
 export interface Ent {
@@ -142,6 +143,8 @@ export interface HudSnap {
   tech: Record<TechWing, number>;
   ability: { strike: number; dome: number; nuke: number };
   abilityArm: "strike" | "nuke" | null;
+  objective: string;
+  objectivePct: number;
 }
 
 interface HeapN {
@@ -238,9 +241,15 @@ export class Sim {
   ];
   ability = { strike: 0, dome: 0, nuke: 0 };
   abilityArm: "strike" | "nuke" | null = null;
+  mission: SkirmishMap | null = null;
+  missionMined = 0;
+  missionStolen = false;
+  missionHome = false;
+  cargoId = -1;
+  siloId = -1;
   private by = new Map<number, Ent>();
 
-  constructor(chapterId = "usa-01") {
+  constructor(chapterId = "usa-01", mission: SkirmishMap | null = null) {
     const chapter = chapterById(chapterId);
     this.chapterId = chapter.id;
     this.pois = buildMap(chapter);
@@ -252,9 +261,103 @@ export class Sim {
     this.occ = new Int32Array(COLS * ROWS);
     this.explored = new Uint8Array(COLS * ROWS);
     this.visible = new Uint8Array(COLS * ROWS);
+    this.mission = mission;
     this.seed();
+    this.armMission();
     this.recomputeBlocks();
     this.updateFog();
+  }
+
+  private armMission(): void {
+    const mission = this.mission;
+    if (!mission) return;
+    this.say(mission.brief);
+    if (mission.kind === "cargo") {
+      const truck = this.addUnit("viper", 0, 640, 1100);
+      truck.order = "move";
+      truck.destX = this.pois.enemy.x - 80;
+      truck.destY = this.pois.enemy.y + 40;
+      this.cargoId = truck.id;
+    }
+    if (mission.kind === "nuke" || mission.kind === "steal") {
+      const silo = this.addBuilding("silo", 1, 60 * TILE, 8 * TILE, true);
+      this.siloId = silo.id;
+    }
+    if (mission.kind === "rare") {
+      let left = 18;
+      for (let i = 0; i < this.ion.length && left > 0; i++) {
+        if (this.ion[i] > 40) {
+          this.ion[i] = 220;
+          left -= 1;
+        }
+      }
+    }
+  }
+
+  private tickMission(): void {
+    const mission = this.mission;
+    if (!mission || this.winner !== null) return;
+    if (mission.kind === "minerals" || mission.kind === "rare") {
+      this.missionMined = Math.max(this.missionMined, Math.max(0, this.credits[0] - 2100));
+      if (this.missionMined >= mission.goal) this.declare(0, "Veins secured.");
+    }
+    if (mission.kind === "cargo") {
+      const truck = this.by.get(this.cargoId);
+      if (!truck || !truck.alive) this.declare(1, "The cargo is gone.");
+      else {
+        truck.order = "move";
+        truck.destX = this.pois.enemy.x - 80;
+        truck.destY = this.pois.enemy.y + 40;
+        if (Math.hypot(truck.x - truck.destX, truck.y - truck.destY) < 90) this.declare(0, "Cargo cleared the ridge.");
+      }
+    }
+    if (mission.kind === "steal") {
+      const crate = this.by.get(this.siloId);
+      const thief = this.ents.find((e) => e.alive && e.team === 0 && !DEFS[e.kind].building);
+      if (!this.missionStolen && crate && thief && Math.hypot(thief.x - crate.x, thief.y - crate.y) < 90) {
+        this.missionStolen = true;
+        this.say("Crate lifted. Bring it home.");
+      }
+      const home = this.ents.find((e) => e.alive && e.team === 0 && e.kind === "spire");
+      if (this.missionStolen && home && thief && Math.hypot(thief.x - home.x, thief.y - home.y) < 120) this.declare(0, "Archive crate is home.");
+    }
+    if (mission.kind === "build") {
+      const built = this.ents.some((e) => e.alive && e.team === 0 && e.kind === "relay" && e.buildLeft <= 0 && e.x > 500);
+      if (built) this.declare(0, "Relay spire is up.");
+    }
+    if (mission.kind === "relays") {
+      const relays = this.ents.filter((e) => e.alive && e.team === 0 && e.kind === "relay" && e.buildLeft <= 0).length;
+      if (relays >= mission.goal) this.declare(0, "Relays held.");
+    }
+    if (mission.kind === "nuke") {
+      const silo = this.by.get(this.siloId);
+      if (mission.clock !== null && this.time >= mission.clock && silo?.alive) this.declare(1, "The warhead clock hit zero.");
+      else if (silo && !silo.alive) this.declare(0, "Warhead building destroyed.");
+    }
+    if (mission.kind === "destroy") {
+      const army = this.ents.some((e) => e.alive && e.team === 1 && !DEFS[e.kind].building);
+      const spire = this.ents.some((e) => e.alive && e.team === 1 && e.kind === "spire");
+      if (!army && !spire) this.declare(0, "Enemy force is gone.");
+    }
+  }
+
+  private declare(team: 0 | 1, line: string): void {
+    if (this.winner !== null) return;
+    this.winner = team;
+    this.say(line);
+    this.events.push({ t: team === 0 ? "win" : "lose" });
+  }
+
+  objectiveLine(): { text: string; pct: number } {
+    const mission = this.mission;
+    if (!mission) return { text: "Destroy the enemy spire.", pct: this.winner === 0 ? 100 : 0 };
+    if (mission.kind === "minerals" || mission.kind === "rare") return { text: mission.brief, pct: Math.min(100, (this.missionMined / mission.goal) * 100) };
+    if (mission.kind === "nuke" && mission.clock) return { text: `${mission.brief} ${Math.max(0, Math.ceil(mission.clock - this.time))}s.`, pct: Math.min(100, (this.time / mission.clock) * 100) };
+    if (mission.kind === "relays") {
+      const relays = this.ents.filter((e) => e.alive && e.team === 0 && e.kind === "relay" && e.buildLeft <= 0).length;
+      return { text: mission.brief, pct: Math.min(100, (relays / mission.goal) * 100) };
+    }
+    return { text: mission.brief, pct: this.winner === 0 ? 100 : 12 };
   }
 
   private seed(): void {
@@ -403,6 +506,7 @@ export class Sim {
     this.tickParticles(dt);
     this.updateFog();
     this.noteContact();
+    this.tickMission();
     if (this.aiAcc >= 1) {
       this.aiAcc = 0;
       this.thinkAI();
@@ -1408,6 +1512,8 @@ export class Sim {
       tech: { ...this.tech[0] },
       ability: { ...this.ability },
       abilityArm: this.abilityArm,
+      objective: this.objectiveLine().text,
+      objectivePct: this.objectiveLine().pct,
     };
   }
 

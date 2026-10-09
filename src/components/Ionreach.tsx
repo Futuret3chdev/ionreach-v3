@@ -28,8 +28,10 @@ import { Renderer, type Cam } from "@/game/render";
 import { Sim, type HudSnap } from "@/game/sim";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { Briefing } from "@/components/Briefing";
+import { SkirmishNet } from "@/components/SkirmishNet";
 import { Hudson } from "@/components/Hudson";
 import { chapterById, countryOf, isOpen, nextPlayable, type Chapter } from "@/game/campaign";
+import { mapById, serverById, type SkirmishSetup } from "@/game/skirmish";
 import { markCleared, markWatched } from "@/game/progress";
 import { allBadges, noteCombat, type Badge } from "@/game/achievements";
 import { grantMarks, readProfile, writeSave, type SaveSlot } from "@/lib/meta/profile";
@@ -134,6 +136,10 @@ export function Ionreach() {
   const [hudson, setHudson] = useState<Chapter | null>(null);
   const midPlayed = useRef(false);
   const [records, setRecords] = useState(false);
+  const [skirmish, setSkirmish] = useState(false);
+  const [trailerChoice, setTrailerChoice] = useState(false);
+  const [midChoice, setMidChoice] = useState(false);
+  const pendingLoad = useRef(false);
   const [earned, setEarned] = useState<Badge[]>([]);
   const [toasts, setToasts] = useState<Badge[]>([]);
   const chapterRef = useRef("usa-01");
@@ -531,18 +537,25 @@ export function Ionreach() {
     sim.recomputeBlocks();
   }
 
-  function deploy(id = chapterRef.current) {
+  function deploy(id = chapterRef.current, setup: SkirmishSetup | null = null) {
     sfx.current.unlock();
     if (musicOnRef.current) sfx.current.startScore();
-    chapterRef.current = id;
+    chapterRef.current = setup ? mapById(setup.mapId).chapterId : id;
     midPlayed.current = false;
     setMid(null);
+    setMidChoice(false);
     earnedRef.current = [];
     setEarned([]);
     setToasts([]);
     setBrief(null);
     setPicking(false);
-    const sim = new Sim(id);
+    setSkirmish(false);
+    setTrailerChoice(false);
+    const sim = new Sim(chapterRef.current, setup ? mapById(setup.mapId) : null);
+    if (setup) {
+      const server = serverById(setup.serverId);
+      sim.say(`${server.name}. ${setup.format}. ${setup.opponent === "ai" ? "Computer opposition." : setup.opponent === "mixed" ? "Players and computer." : "Player opposition."} Room ${setup.room}.`);
+    }
     applyLoadout(sim);
     simRef.current = sim;
     camRef.current = { x: sim.pois.player.x + 160, y: sim.pois.player.y - 160, z: 0.92 };
@@ -636,6 +649,9 @@ export function Ionreach() {
             <button type="button" onClick={() => setPicking(true)} className="min-h-11 bg-ion px-5 font-display text-lg font-semibold text-bg">
               Choose a chapter
             </button>
+            <button type="button" onClick={() => setSkirmish(true)} className="min-h-11 border border-ion bg-surface/80 px-5 font-display text-lg text-ion">
+              Multiplayer servers
+            </button>
             <button type="button" onClick={() => setSettings(true)} className="min-h-11 border border-line bg-surface/80 px-5 font-display text-lg text-fg">Settings</button>
             <button type="button" onClick={() => openCinema(0)} className="inline-flex min-h-11 items-center gap-2 border border-line bg-surface/80 px-5 font-display text-lg text-fg">
               <Play className="size-4" />
@@ -657,12 +673,18 @@ export function Ionreach() {
 
       {cinema && (
         <div className="absolute inset-0 z-30 flex flex-col bg-bg">
-          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=7" autoPlay controls playsInline poster="/media/poster.jpg" />
+          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=7" autoPlay controls playsInline poster="/media/poster.jpg" onEnded={() => setTrailerChoice(true)} />
           <div className="flex items-center justify-between gap-3 px-4 py-3">
-            <p className="font-display text-lg tracking-widest text-ion">T3X · GLASS HORIZON</p>
-            <button type="button" onClick={closeCinema} className="min-h-11 bg-ion px-4 font-display text-bg">
-              Close
-            </button>
+            <p className="font-display text-lg tracking-widest text-ion">{trailerChoice ? "CHOOSE" : "T3X · GLASS HORIZON"}</p>
+            {trailerChoice ? (
+              <div className="flex flex-wrap justify-end gap-2">
+                <button type="button" onClick={() => { setTrailerChoice(false); closeCinema(); setPicking(true); }} className="min-h-11 bg-ion px-4 font-display text-bg">Play now</button>
+                <button type="button" onClick={() => { setTrailerChoice(false); closeCinema(); }} className="min-h-11 border border-line px-3 font-display">Go back</button>
+                <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setTrailerChoice(true)} className="min-h-11 bg-ion px-4 font-display text-bg">Skip to choice</button>
+            )}
           </div>
         </div>
       )}
@@ -738,6 +760,13 @@ export function Ionreach() {
         </div>
       )}
 
+      {skirmish && (
+        <SkirmishNet
+          onClose={() => setSkirmish(false)}
+          onHost={(setup) => deploy(chapterRef.current, setup)}
+        />
+      )}
+
       {brief && (
         <Briefing
           chapter={brief}
@@ -745,32 +774,34 @@ export function Ionreach() {
             setBrief(null);
             setPicking(true);
           }}
-          onDone={(watched) => {
+          onPlay={(watched) => {
             if (watched) {
               markWatched(brief.id);
               setStoryTick((n) => n + 1);
             }
             deploy(brief.id);
           }}
+          onLoad={() => {
+            pendingLoad.current = true;
+            setSettings(true);
+          }}
         />
       )}
 
       {mid && (
         <div className="absolute inset-0 z-30 flex flex-col bg-black">
-          <video className="min-h-0 w-full flex-1 bg-black object-contain" src={`/media/briefings/${mid}.mp4`} autoPlay playsInline onEnded={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); }} />
+          <video className="min-h-0 w-full flex-1 bg-black object-contain" src={`/media/briefings/${mid}.mp4`} autoPlay playsInline onEnded={() => setMidChoice(true)} />
           <div className="flex items-center justify-between gap-3 border-t border-line bg-bg px-4 py-3">
-            <p className="font-display text-sm tracking-[0.16em] text-gold">TRANSMISSION · HALFWAY</p>
-            <button
-              type="button"
-              onClick={() => {
-                pauseRef.current = false;
-                if (simRef.current) simRef.current.paused = false;
-                setMid(null);
-              }}
-              className="min-h-11 bg-ion px-4 font-display text-bg"
-            >
-              Back to the fight
-            </button>
+            <p className="font-display text-sm tracking-[0.16em] text-gold">{midChoice ? "CHOOSE" : "TRANSMISSION · HALFWAY"}</p>
+            {midChoice ? (
+              <div className="flex flex-wrap justify-end gap-2">
+                <button type="button" onClick={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); setMidChoice(false); }} className="min-h-11 bg-ion px-4 font-display text-bg">Play now</button>
+                <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; }} className="min-h-11 border border-line px-3 font-display">Go back</button>
+                <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setMidChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>
+            )}
           </div>
         </div>
       )}
@@ -887,6 +918,7 @@ export function Ionreach() {
                 </div>
               </div>
               <div className="pointer-events-none max-w-sm text-center">
+                {hud?.objective && <p className="border border-ion/60 bg-bg/80 px-3 py-2 font-display text-sm text-ion">{hud.objective}</p>}
                 {hud?.message && <p className="border border-line bg-bg/80 px-3 py-2 font-display text-lg text-fg">{hud.message}</p>}
                 {hud?.low && <p className="mt-2 bg-ember px-3 py-1 font-display text-bg">Grid starved</p>}
                 {hud?.attackArm && <p className="mt-2 bg-ion px-3 py-1 font-display text-bg">Attack-move — choose ground</p>}
@@ -1011,7 +1043,7 @@ export function Ionreach() {
           <div className="w-full max-w-md border border-line bg-surface p-6">
             <p className="font-display text-sm tracking-[0.2em] text-ion">{phase === "win" ? "HORIZON HELD" : "HORIZON LOST"}</p>
             <h2 className="font-display text-4xl font-semibold">{phase === "win" ? "Vesper spire is dust." : "The spire fell."}</h2>
-            <p className="mt-2 text-muted">{phase === "win" ? `Held in ${clock(hud?.time ?? 0)}. ${chapterById(chapterRef.current).theater} is yours.` : "Rebuild the grid and try the ridge again."}</p>
+            <p className="mt-2 text-muted">{phase === "win" ? `Held in ${clock(hud?.time ?? 0)}. ${hud?.objective ?? chapterById(chapterRef.current).theater}` : "The objective failed. Rebuild and try the map again."}</p>
             {best && phase === "win" && <p className="mt-1 text-sm text-gold">Best {clock(best)}</p>}
             {earned.length > 0 && (
               <ul className="mt-3 space-y-1">
@@ -1074,6 +1106,12 @@ export function Ionreach() {
           simRef.current?.importState(blob);
           setHud(simRef.current?.snapshot() ?? null);
           setSettings(false);
+          setBrief(null);
+          setMid(null);
+          setMidChoice(false);
+          setTrailerChoice(false);
+          setCinema(false);
+          pendingLoad.current = false;
         }}
         musicOn={musicOn}
         onMusic={(on) => {
