@@ -1399,14 +1399,11 @@ function Mark({ kind }: { kind: Kind }) {
   }
   return (
     <svg viewBox="0 0 64 32" className="h-8 w-12" aria-hidden>
-      <circle cx="24" cy="8" r="3.2" fill={kind === "specops" ? "#8ea0aa" : "#e6c2a4"} />
-      <path d="M20 12 H28 L27 24 H21 Z" fill={kind === "specops" ? "#1c242c" : kind === "sergeant" ? "#243028" : "#3d4a34"} />
-      <path d="M27 16 H48" stroke="#1a1e22" strokeWidth={kind === "rocket" ? 3 : 1.6} />
-      <path d="M30 16 V20" stroke="#1a1e22" strokeWidth="1.4" />
-      <path d="M22 24 V28 M26 24 V28" stroke="#14110e" strokeWidth="1.6" />
-      {kind === "patrol" && <ellipse cx="14" cy="22" rx="4" ry="2.2" fill="#6a5038" />}
-      {kind === "watch" && <rect x="27" y="6" width="6" height="2" fill="#d5dee6" />}
-      {kind === "sergeant" && <rect x="22" y="14" width="2" height="2" fill="#e8c56b" />}
+      <ellipse cx="26" cy="18" rx="8" ry="5" fill="#3f6a40" />
+      <circle cx="22" cy="12" r="5" fill="#2f5a34" />
+      <rect x="20" y="14" width="14" height="3" fill="#2a3036" />
+      <rect x="28" y="16" width="2" height="3" fill="#1a1e22" />
+      <circle cx="24" cy="16" r="1.4" fill="#e4c2a2" />
     </svg>
   );
 }

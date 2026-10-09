@@ -546,50 +546,70 @@ export class Renderer {
   private drawSoldier(ctx: CanvasRenderingContext2D, e: Ent, time: number, team: string): void {
     ctx.rotate(e.facing);
     const moving = e.order !== "idle" && e.order !== "hold";
-    const step = Math.sin(time * 10 + e.id) * (moving ? 2.4 : 0.15);
+    const step = Math.sin(time * 10 + e.id) * (moving ? 1.6 : 0);
     const ready = this.kick(e.id);
-    const cloth =
-      e.kind === "specops" ? "#1a2228" : e.kind === "sergeant" ? "#243028" : e.kind === "watch" ? "#6a5a3c" : e.kind === "grenadier" ? "#4a3828" : "#3d4a34";
-    ctx.fillStyle = "#14110e";
-    ctx.fillRect(-3.2, 4 + step, 2.6, 5);
-    ctx.fillRect(0.8, 4 - step, 2.6, 5);
+    const foe = e.team === 1;
+    const cloth = foe
+      ? "#6a3830"
+      : e.kind === "specops"
+        ? "#243038"
+        : e.kind === "sergeant"
+          ? "#2e4634"
+          : e.kind === "watch"
+            ? "#6a6238"
+            : "#3f6a40";
+    ctx.fillStyle = "rgba(0,0,0,0.28)";
+    ctx.beginPath();
+    ctx.ellipse(1, 2, 8, 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = cloth;
-    ctx.fillRect(-3.4, -1, 7.2, 6.2);
+    ctx.fillRect(-8, -3.4 + step, 5, 2.2);
+    ctx.fillRect(-8, 1.1 - step, 5, 2.2);
+    ctx.fillStyle = "#2a3138";
+    ctx.fillRect(-10, -3.6 + step, 2.4, 2.5);
+    ctx.fillRect(-10, 1.2 - step, 2.4, 2.5);
+    ctx.fillStyle = cloth;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 5.2, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = foe ? "#4a2a24" : "#6d5a38";
+    ctx.fillRect(-1.2, -2.2, 3.6, 4.4);
     ctx.fillStyle = team;
-    ctx.fillRect(-2.8, 0.2, 2.2, 3.4);
-    ctx.fillStyle = "#c6b08a";
-    ctx.fillRect(2.2, 0.4, 1.5, 2.6);
-    ctx.fillStyle = e.kind === "specops" ? "#8ea0aa" : "#e4c2a2";
+    ctx.fillRect(1.6, -3.5, 2.4, 1.5);
+    ctx.fillStyle = cloth;
     ctx.beginPath();
-    ctx.arc(0.4, -3.2 - ready * 1.2, 2.5, 0, Math.PI * 2);
+    ctx.arc(-1.2, -0.4, 3.3, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = e.kind === "specops" ? "#101418" : "#2a241c";
+    ctx.fillStyle = foe ? "#8a4038" : "#2f5a34";
     ctx.beginPath();
-    ctx.ellipse(0.4, -4.4 - ready, 2.8, 1.5, 0, Math.PI, Math.PI * 2);
+    ctx.arc(-1.4, -0.8, 2.5, Math.PI, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "rgba(180,220,230,0.8)";
-    ctx.fillRect(1.2, -3.4, 1.8, 0.8);
+    ctx.fillStyle = "#e6c39a";
+    ctx.fillRect(-0.6, 0.2, 2.2, 1.4);
     ctx.save();
-    ctx.translate(1.2, 0.4);
-    ctx.rotate(-0.15 + ready * 0.7);
+    ctx.translate(0.5, 0.6);
+    ctx.rotate(-0.35 + ready * 0.55);
     this.drawGun(ctx, e.kind);
     ctx.restore();
+    ctx.fillStyle = "#e4c2a2";
+    ctx.beginPath();
+    ctx.arc(2.4, 1.3, 1.15, 0, Math.PI * 2);
+    ctx.arc(6.2, 0.2 + ready, 1.05, 0, Math.PI * 2);
+    ctx.fill();
     if (e.kind === "sergeant") {
       ctx.fillStyle = "#e8c56b";
-      ctx.fillRect(-2.4, 0.6, 1.4, 1.4);
+      ctx.fillRect(-1.4, -1.6, 1.3, 1.3);
     }
     if (e.kind === "patrol") {
       ctx.fillStyle = "#6a5038";
       ctx.beginPath();
-      ctx.ellipse(-7, 3, 3.2, 1.8, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(-4, 6, 2.6, 1.5, 0.4, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#2a2018";
-      ctx.fillRect(-10, 2.2, 2.2, 0.8);
     }
     if (e.kind === "watch") {
       ctx.strokeStyle = "#d5dee6";
-      ctx.lineWidth = 1;
-      ctx.strokeRect(2.2, -3.2, 3.4, 1.3);
+      ctx.lineWidth = 0.8;
+      ctx.strokeRect(-0.2, -2.4, 2.8, 1.1);
     }
   }
 
