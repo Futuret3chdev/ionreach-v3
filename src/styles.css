@@ -31,14 +31,27 @@
 
   html.ios-full,
   html.ios-full body {
+    margin: 0;
+    width: 100%;
     height: var(--app-h, 100dvh);
+    min-height: 100vh;
     overflow: hidden;
     background: #07090e;
+    overscroll-behavior: none;
   }
 
   html.ios-full body {
     position: fixed;
     inset: 0;
+  }
+
+  html.ios-full body main {
+    position: fixed;
+    inset: 0;
     width: 100%;
+    height: var(--app-h, 100dvh) !important;
+    min-height: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

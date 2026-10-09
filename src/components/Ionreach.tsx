@@ -676,35 +676,52 @@ export function Ionreach() {
     if (!reduce && phaseRef.current === "title") void v.play().catch(() => undefined);
   }
 
+  function isIphone() {
+    return /iPhone|iPod/.test(navigator.userAgent);
+  }
+
   function fitScreen() {
-    const h = window.visualViewport?.height ?? window.innerHeight;
-    document.documentElement.style.setProperty("--app-h", `${Math.round(h)}px`);
+    const view = window.visualViewport;
+    const h = Math.round(view?.height ?? window.innerHeight);
+    document.documentElement.style.setProperty("--app-h", `${h}px`);
   }
 
   function enterIphoneFull() {
-    document.documentElement.classList.add("ios-full");
-    fitScreen();
+    const root = document.documentElement;
+    root.classList.add("ios-full");
+    root.style.minHeight = "100vh";
+    document.body.style.minHeight = "100vh";
     setFull(true);
     window.scrollTo(0, 0);
-    requestAnimationFrame(() => window.scrollTo(0, 1));
+    window.setTimeout(() => {
+      window.scrollTo(0, 1);
+      window.setTimeout(() => {
+        fitScreen();
+        window.scrollTo(0, 0);
+      }, 80);
+    }, 30);
   }
 
   function leaveIphoneFull() {
-    document.documentElement.classList.remove("ios-full");
+    const root = document.documentElement;
+    root.classList.remove("ios-full");
+    root.style.minHeight = "";
+    document.body.style.minHeight = "";
     setFull(!!(document.fullscreenElement || (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement));
   }
 
   async function toggleFull() {
     const root = document.documentElement;
     const doc = document as Document & { webkitFullscreenElement?: Element; webkitExitFullscreen?: () => Promise<void> };
+    if (isIphone()) {
+      if (root.classList.contains("ios-full")) leaveIphoneFull();
+      else enterIphoneFull();
+      return;
+    }
     const native = document.fullscreenElement || doc.webkitFullscreenElement;
     if (native) {
       const exit = document.exitFullscreen?.bind(document) ?? doc.webkitExitFullscreen?.bind(document);
       await exit?.().catch(() => undefined);
-      leaveIphoneFull();
-      return;
-    }
-    if (root.classList.contains("ios-full")) {
       leaveIphoneFull();
       return;
     }
@@ -716,7 +733,8 @@ export function Ionreach() {
         setFull(true);
         return;
       } catch {
-        /* iPhone Safari rejects fullscreen on anything that is not a video. */
+        enterIphoneFull();
+        return;
       }
     }
     enterIphoneFull();
@@ -759,9 +777,17 @@ export function Ionreach() {
       />
       {!battle && <div className="absolute inset-0 bg-bg/45" />}
       {!battle && !menuChrome && (
-        <button type="button" onClick={() => setMenuChrome(true)} className="absolute top-3 right-3 z-10 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
-          Menu
-        </button>
+        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-20 flex items-center gap-2">
+          <button type="button" onClick={toggleMute} className="inline-flex min-h-11 min-w-11 items-center justify-center border border-line bg-bg/90" aria-label={muted ? "Sound on" : "Mute"}>
+            {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+          </button>
+          <button type="button" onClick={toggleFull} className="inline-flex min-h-11 min-w-11 items-center justify-center border border-line bg-bg/90" aria-label="Full screen">
+            {full ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+          </button>
+          <button type="button" onClick={() => setMenuChrome(true)} className="min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
+            Menu
+          </button>
+        </div>
       )}
       {!battle && menuChrome && (
         <div className="absolute inset-0 z-10 flex flex-col bg-[#07101c]/95">
