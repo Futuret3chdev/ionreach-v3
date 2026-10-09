@@ -672,16 +672,13 @@ export function Ionreach() {
       )}
 
       {cinema && (
-        <div className="absolute inset-0 z-30 flex flex-col bg-bg">
-          <video ref={cutRef} className="min-h-0 flex-1 object-contain" src="/media/trailer.mp4?v=7" autoPlay controls playsInline poster="/media/poster.jpg" onEnded={() => setTrailerChoice(true)} />
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-            <p className="font-display text-lg tracking-widest text-ion">{trailerChoice ? "CHOOSE" : "T3X · GLASS HORIZON"}</p>
-            <div className="flex flex-wrap justify-end gap-2">
-              <button type="button" disabled={!trailerChoice} onClick={() => { setTrailerChoice(false); closeCinema(); setPicking(true); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
-              <button type="button" onClick={() => { setTrailerChoice(false); closeCinema(); }} className="min-h-11 border border-line px-3 font-display">Go back</button>
-              <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
-              {!trailerChoice && <button type="button" onClick={() => setTrailerChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
-            </div>
+        <div className="absolute inset-0 z-30 bg-bg">
+          <video ref={cutRef} className="h-full w-full object-contain" src="/media/trailer.mp4?v=8" autoPlay playsInline poster="/media/poster.jpg" onEnded={() => setTrailerChoice(true)} />
+          <div className="absolute inset-x-0 bottom-0 z-20 flex flex-wrap items-center gap-2 border-t border-line bg-bg px-3 py-3">
+            <button type="button" onClick={() => { setTrailerChoice(false); closeCinema(); }} className="min-h-11 border border-line bg-surface px-4 font-display">Go back</button>
+            <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
+            <button type="button" disabled={!trailerChoice} onClick={() => { setTrailerChoice(false); closeCinema(); setPicking(true); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
+            {!trailerChoice && <button type="button" onClick={() => setTrailerChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
           </div>
         </div>
       )}
@@ -818,16 +815,13 @@ export function Ionreach() {
       )}
 
       {mid && (
-        <div className="absolute inset-0 z-30 flex flex-col bg-black">
-          <video className="min-h-0 w-full flex-1 bg-black object-contain" src={`/media/briefings/${mid}.mp4`} autoPlay playsInline onEnded={() => setMidChoice(true)} />
-          <div className="flex items-center justify-between gap-3 border-t border-line bg-bg px-4 py-3">
-            <p className="font-display text-sm tracking-[0.16em] text-gold">{midChoice ? "CHOOSE" : "TRANSMISSION · HALFWAY"}</p>
-            <div className="flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; }} className="min-h-11 border border-line px-3 font-display">Go back</button>
-              <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
-              <button type="button" disabled={!midChoice} onClick={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); setMidChoice(false); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
-              {!midChoice && <button type="button" onClick={() => setMidChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
-            </div>
+        <div className="absolute inset-0 z-30 bg-black">
+          <video className="h-full w-full bg-black object-contain" src={`/media/briefings/${mid}.mp4`} autoPlay playsInline onEnded={() => setMidChoice(true)} />
+          <div className="absolute inset-x-0 bottom-0 z-20 flex flex-wrap items-center gap-2 border-t border-line bg-bg px-3 py-3">
+            <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; }} className="min-h-11 border border-line bg-surface px-4 font-display">Go back</button>
+            <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
+            <button type="button" disabled={!midChoice} onClick={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); setMidChoice(false); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
+            {!midChoice && <button type="button" onClick={() => setMidChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
           </div>
         </div>
       )}

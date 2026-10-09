@@ -112,27 +112,24 @@ export function Briefing({
       />
       <audio ref={audioRef} onEnded={() => hold(true)} />
       {blocked && !choice && (
-        <button type="button" onClick={play} className="absolute inset-0 z-10 flex items-center justify-center bg-black/45">
+        <button type="button" onClick={play} className="absolute inset-x-0 top-0 bottom-28 z-10 flex items-center justify-center bg-black/45">
           <span className="min-h-11 bg-ion px-5 font-display text-lg text-bg">Play the brief</span>
         </button>
       )}
-      <div className="pointer-events-none absolute inset-x-0 bottom-16 bg-gradient-to-t from-black via-black/85 to-transparent px-5 pt-16 pb-4 md:px-12">
+      <div className="pointer-events-none absolute inset-x-0 bottom-28 z-10 bg-gradient-to-t from-black via-black/85 to-transparent px-5 pt-16 pb-4 md:px-12">
         <p className="font-display text-xs tracking-[0.22em] text-ion">{chapter.country.toUpperCase()} BRIEF · CHAPTER {chapter.index}</p>
         <h2 className="font-display text-4xl font-semibold text-fg md:text-5xl">{chapter.theater}</h2>
         <p className="mt-2 max-w-3xl text-base text-fg md:text-lg">{choice ? "Brief complete. The fight does not start until you choose." : lines[line]}</p>
       </div>
-      <div className="flex items-center justify-between gap-3 border-t border-line bg-bg px-4 py-3">
-        <p className="font-display text-sm tracking-[0.16em] text-gold">{locked ? "SEALED" : choice ? "CHOOSE" : "CHAPTER FILM"}</p>
-        <div className="flex flex-wrap justify-end gap-2">
-          <button type="button" onClick={onBack} className="min-h-11 border border-line px-3 font-display">Go back</button>
-          <button type="button" onClick={onLoad} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
-          <button type="button" disabled={locked || !choice} onClick={() => onPlay(watched.current)} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">
-            Play now
-          </button>
-          {!choice && (
-            <button type="button" onClick={() => hold(false)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>
-          )}
-        </div>
+      <div className="absolute inset-x-0 bottom-0 z-20 flex flex-wrap items-center gap-2 border-t border-line bg-bg px-3 py-3">
+        <button type="button" onClick={onBack} className="min-h-11 border border-line bg-surface px-4 font-display">Go back</button>
+        <button type="button" onClick={onLoad} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
+        <button type="button" disabled={locked || !choice} onClick={() => onPlay(watched.current)} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">
+          Play now
+        </button>
+        {!choice && (
+          <button type="button" onClick={() => hold(false)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>
+        )}
       </div>
     </div>
   );
