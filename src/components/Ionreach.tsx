@@ -823,43 +823,64 @@ export function Ionreach() {
             )}
             {menuTool === "campaign" && (
               <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
-                <div className="flex gap-2 overflow-x-auto">
+                <div className="flex flex-col gap-2">
                   {COUNTRY_IDS.map((id) => {
                     const chapters = countryOf(id);
                     const on = pickingCountry === id;
+                    const fact = ARMY[id];
                     return (
-                      <button key={id} type="button" onClick={() => setPickingCountry(on ? null : id)} className={"w-28 shrink-0 overflow-hidden border text-left " + (on ? "border-ion" : "border-line")}>
-                        <Flag id={id} className="block h-10 w-full" />
-                        <span className="block px-1 py-1">
-                          <span className="block truncate font-display text-xs">{chapters[0]?.country}</span>
-                          <span className="block text-[10px] text-muted">{chapters.length} chapters</span>
-                        </span>
-                      </button>
+                      <section key={id} className={on ? "border border-ion" : "border border-line"}>
+                        <button type="button" onClick={() => setPickingCountry(on ? null : id)} className="flex w-full items-center gap-3 p-2 text-left">
+                          <Flag id={id} className="h-12 w-20 shrink-0" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-display text-lg">{chapters[0]?.country}</span>
+                            <span className="block text-xs text-muted">{chapters.length} chapters{on ? "" : " · open"}</span>
+                          </span>
+                        </button>
+                        {on && fact && (
+                          <div className="border-t border-line px-3 py-3">
+                            <p className="font-display text-xs tracking-[0.16em] text-ion">PUBLIC RECORD</p>
+                            <p className="mt-1 text-sm text-muted">{fact.line}</p>
+                            <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <dt className="text-[11px] text-muted">People</dt>
+                                <dd className="font-display">{fact.people}</dd>
+                              </div>
+                              <div>
+                                <dt className="text-[11px] text-muted">Active force</dt>
+                                <dd className="font-display">{fact.active}</dd>
+                              </div>
+                              <div className="col-span-2">
+                                <dt className="text-[11px] text-muted">Services</dt>
+                                <dd>{fact.services}</dd>
+                              </div>
+                            </dl>
+                            <div className="mt-3 flex flex-col gap-2">
+                              {chapters.map((chapter, index, list) => {
+                                void storyTick;
+                                const open = isOpen(list, index);
+                                return (
+                                  <article key={chapter.id} className="border border-line bg-[#101820] p-2">
+                                    <p className="font-display text-[10px] tracking-[0.14em] text-ion">
+                                      CHAPTER {chapter.index}
+                                      {!open ? " · SEALED" : ""}
+                                    </p>
+                                    <p className="font-display text-sm">{chapter.theater}</p>
+                                    <p className="mt-1 text-[11px] text-muted">{open ? chapter.line : "Watch the previous film, or win that fight."}</p>
+                                    <div className="mt-2 flex gap-1">
+                                      <button type="button" disabled={!chapter.video} onClick={() => { if (!chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 border border-line px-2 font-display text-xs disabled:text-muted">Watch</button>
+                                      <button type="button" disabled={!open || !chapter.video} onClick={() => { if (!open || !chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 bg-ion px-2 font-display text-xs text-bg disabled:bg-line disabled:text-muted">Play</button>
+                                    </div>
+                                  </article>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </section>
                     );
                   })}
                 </div>
-                {pickingCountry && (
-                  <div className="mt-2 flex gap-2 overflow-x-auto">
-                    {countryOf(pickingCountry).map((chapter, index, list) => {
-                      void storyTick;
-                      const open = isOpen(list, index);
-                      return (
-                        <article key={chapter.id} className="w-52 shrink-0 border border-line bg-[#101820] p-2">
-                          <p className="font-display text-[10px] tracking-[0.14em] text-ion">
-                            CHAPTER {chapter.index}
-                            {!open ? " · SEALED" : ""}
-                          </p>
-                          <p className="truncate font-display text-sm">{chapter.theater}</p>
-                          <p className="mt-1 line-clamp-2 text-[11px] text-muted">{open ? chapter.line : "Watch the previous film, or win that fight."}</p>
-                          <div className="mt-2 flex gap-1">
-                            <button type="button" disabled={!chapter.video} onClick={() => { if (!chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 border border-line px-2 font-display text-xs disabled:text-muted">Watch</button>
-                            <button type="button" disabled={!open || !chapter.video} onClick={() => { if (!open || !chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 bg-ion px-2 font-display text-xs text-bg disabled:bg-line disabled:text-muted">Play</button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                )}
               </div>
             )}
             {menuTool === "multi" && (
@@ -1283,6 +1304,69 @@ type Tray = "base" | "men" | "armor" | "air";
 type MenuTool = "campaign" | "multi" | "settings" | "manual" | "records";
 
 const COUNTRY_IDS = ["usa", "russia", "china", "australia", "korea", "japan", "uk", "india", "france", "brazil"];
+
+const ARMY: Record<string, { line: string; people: string; active: string; services: string }> = {
+  usa: {
+    line: "The army dates to 1775. From both world wars to today, American forces keep ships and aircraft on every ocean.",
+    people: "About 340 million",
+    active: "About 1.3 million",
+    services: "Army, Navy, Marine Corps, Air Force, Space Force, Coast Guard",
+  },
+  russia: {
+    line: "The Red Army held the eastern front of the Second World War. Today's Ground Forces, Navy, and Aerospace Forces are its successor.",
+    people: "About 144 million",
+    active: "About 1.1 million",
+    services: "Ground Forces, Navy, Aerospace Forces",
+  },
+  china: {
+    line: "The People's Liberation Army was founded in 1927. By headcount it is the largest standing force in the world.",
+    people: "About 1.4 billion",
+    active: "About 2 million",
+    services: "Ground Force, Navy, Air Force, Rocket Force",
+  },
+  australia: {
+    line: "Australians landed at Gallipoli in 1915 and held the Kokoda Track in 1942. The Defence Force is a volunteer service.",
+    people: "About 27 million",
+    active: "About 60,000",
+    services: "Army, Navy, Air Force",
+  },
+  korea: {
+    line: "The Republic of Korea armed forces date to 1948, after the war of 1950–53. Men still serve a term of conscription.",
+    people: "About 51 million",
+    active: "About 500,000",
+    services: "Army, Navy, Air Force, Marine Corps",
+  },
+  japan: {
+    line: "The Self-Defense Forces have stood since 1954. The constitution limits them to the defense of Japan.",
+    people: "About 123 million",
+    active: "About 250,000",
+    services: "Ground, Maritime, and Air Self-Defense Forces",
+  },
+  uk: {
+    line: "Britain fought both world wars as a great power and still keeps a nuclear navy beside a standing army.",
+    people: "About 68 million",
+    active: "About 150,000 regulars",
+    services: "Royal Navy, British Army, Royal Air Force",
+  },
+  india: {
+    line: "Independent armed forces since 1947. India keeps one of the largest standing armies on earth.",
+    people: "About 1.4 billion",
+    active: "About 1.4 million",
+    services: "Army, Navy, Air Force",
+  },
+  france: {
+    line: "French forces fought both world wars and still keep a nuclear deterrent and the Foreign Legion.",
+    people: "About 68 million",
+    active: "About 200,000",
+    services: "Army, Navy, Air and Space Force, Foreign Legion",
+  },
+  brazil: {
+    line: "The Brazilian Expeditionary Force fought in Italy in 1944–45. Today Brazil fields the largest armed forces in Latin America.",
+    people: "About 213 million",
+    active: "About 360,000",
+    services: "Army, Navy, Air Force",
+  },
+};
 
 function Flag({ id, className }: { id: string; className?: string }) {
   const box = className ?? "block h-16 w-full";
