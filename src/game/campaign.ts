@@ -80,17 +80,17 @@ const usa = arc("usa", {
   { theater: "Spire Steps", line: "The glass doors in the snow.", brief: "This is the first spire of the Cascade. Crack it and the campaign turns.", hudson: "First spire down. Hudson says the harbor ice is the next road.", video: "usa-07" },
   { theater: "Cold Harbor", line: "A tower on the dawn ridge.", brief: "They rebuilt on the harbor ridge. Take the dawn ground before the ice breaks.", hudson: "Harbor ridge is Helion. The switchback is the only way down.", video: "usa-08" },
   { theater: "Switchback", line: "A road cut above the river.", brief: "The switchback is slow. Do not rush the turn. Their guns like a line of tanks.", hudson: "The road is ours. Hudson says the last ford is quiet, and that is a lie.", video: "usa-09" },
-  { theater: "Quiet Ford", line: "Shallow water and a spire in the cloud.", brief: "Cross the ford under the cloud. The spire is on the far peak. End this half of the Cascade.", hudson: "Half the Cascade is held. Hudson is cutting the next ten briefs. The crown is still out there.", mid: "mid-ridge", video: "usa-10" },
-  { theater: "Vein Cut", line: "Ionite under the second range.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Black Pad", line: "A pad with no trees.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Last Cedar", line: "The final tree line.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Storm Shelf", line: "Weather on the high ground.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Broken Relay", line: "A second dish.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Peak Line", line: "Three peaks, one road.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Soot Yard", line: "Their yard in the lee.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Twin Falls", line: "Two cuts of water.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Vesper Yard", line: "The yard before the crown.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Cascade Crown", line: "The last glass in the range.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
+  { theater: "Quiet Ford", line: "Shallow water and a spire in the cloud.", brief: "Cross the ford under the cloud. The spire is on the far peak. End this half of the Cascade.", hudson: "Half the Cascade is held. The vein under the second range is next.", mid: "mid-ridge", video: "usa-10" },
+  { theater: "Vein Cut", line: "Ionite under the second range.", brief: "The second range hides a vein of ionite. Lamps on. Do not wake the slope.", hudson: "The vein is marked. Hudson says the next pad has no trees.", video: "usa-11" },
+  { theater: "Black Pad", line: "A pad with no trees.", brief: "No cover on this pad. Build walls before you park the tanks.", hudson: "The pad is held. The last cedar is the next wall.", video: "usa-12" },
+  { theater: "Last Cedar", line: "The final tree line.", brief: "This is the last cedar. Infantry takes the trunks. Tanks wait.", hudson: "The trees are ours. A storm is on the shelf.", video: "usa-13" },
+  { theater: "Storm Shelf", line: "Weather on the high ground.", brief: "The shelf is in weather. Hold the tanks and wait for the cloud to break on their tower.", hudson: "The storm passed. Their second dish is still talking.", video: "usa-14" },
+  { theater: "Broken Relay", line: "A second dish.", brief: "One dish is already dead. Kill the second before it finishes the call.", hudson: "Both dishes are dark. Three peaks, one road.", video: "usa-15" },
+  { theater: "Peak Line", line: "Three peaks, one road.", brief: "One road climbs three peaks. Do not bunch the column on the turns.", hudson: "The road is open. Their yard sits in the lee.", video: "usa-16" },
+  { theater: "Soot Yard", line: "Their yard in the lee.", brief: "The yard is under the cliff. Hit it before those tanks roll.", hudson: "The yard is scrap. Twin falls are the next cut.", video: "usa-17" },
+  { theater: "Twin Falls", line: "Two cuts of water.", brief: "Two frozen falls and one ford. Cross between them.", hudson: "The ford is held. Their yard before the crown is next.", video: "usa-18" },
+  { theater: "Vesper Yard", line: "The yard before the crown.", brief: "This yard guards the crown. Break it and the last glass is in reach.", hudson: "The yard is down. Hudson says take the crown.", video: "usa-19" },
+  { theater: "Cascade Crown", line: "The last glass in the range.", brief: "The crown is the last spire in the Cascade. Crack it and the range is Helion.", hudson: "Cascade is closed. Hudson has no further brief on this range.", video: "usa-20" },
 ]);
 
 const russia = arc("russia", {
@@ -102,12 +102,12 @@ const russia = arc("russia", {
   { theater: "Ice Road", line: "Tanks between the birch.", brief: "Stay on the ice road. The birch hides their rockets, not your armor.", hudson: "The road is clear. Hudson wants the birch cut walked, not driven.", video: "russia-02" },
   { theater: "Birch Cut", line: "Thin trees and a frozen river.", brief: "Infantry owns this cut. Tanks wait on the hard ground behind them.", hudson: "The cut is ours. Their guns are on the ridge. Hudson says look up.", video: "russia-03" },
   { theater: "Ridge Guns", line: "Barrels over a pale valley.", brief: "Silence the ridge before you cross the valley. A push under those guns dies.", hudson: "The ridge is quiet. One spire left in the ice.", mid: "mid-ridge", video: "russia-04" },
-  { theater: "Frozen Glass", line: "A spire locked in the ice.", brief: "The spire is in the ice. Crack it and this half of the meridian closes.", hudson: "Half of White Meridian is held. Hudson is cutting the rest.", video: "russia-05" },
-  { theater: "Pale Dock", line: "A dock on the ice.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Birch End", line: "Where the trees stop.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "High Ice", line: "The upper sheet.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "South Meridian", line: "The far side of the line.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "White Crown", line: "The last glass in the cold.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
+  { theater: "Frozen Glass", line: "A spire locked in the ice.", brief: "The spire is in the ice. Crack it and this half of the meridian closes.", hudson: "Half of White Meridian is held. The ice dock is next.", video: "russia-05" },
+  { theater: "Pale Dock", line: "A dock on the ice.", brief: "The dock is their supply on the ice. Take it before the birch ends.", hudson: "The dock is ours. The birch stops just ahead.", video: "russia-06" },
+  { theater: "Birch End", line: "Where the trees stop.", brief: "Where the birch ends, you are in the open. Do not cross until the guns are quiet.", hudson: "The tree line held. The upper ice is the next road.", video: "russia-07" },
+  { theater: "High Ice", line: "The upper sheet.", brief: "The high ice is a sheet with no cover. Cross fast and do not stop.", hudson: "The sheet is crossed. The far meridian is in sight.", video: "russia-08" },
+  { theater: "South Meridian", line: "The far side of the line.", brief: "This is the far side. Their last glass is across the pale ground.", hudson: "The far side is held. One crown left in the cold.", video: "russia-09" },
+  { theater: "White Crown", line: "The last glass in the cold.", brief: "The white crown is the last spire on the meridian. Crack the ice and end it.", hudson: "White Meridian is closed. Hudson is done with the cold.", video: "russia-10" },
 ]);
 
 const china = arc("china", {
@@ -116,15 +116,15 @@ const china = arc("china", {
   sky: ["#1a3040", "#9eb8a8"], ground: [110, 120, 78], canopy: "#3d7a40", trunk: "#4a3428", waterFill: "#1c6878", snow: false,
 }, [
   { theater: "Pearl Shelf", line: "Delta water, terrace rock, and a long approach.", brief: "Pearl Shelf. The delta splits the ground into fingers. Ionite sits on the dry ones.", hudson: "The first shelf is held. Hudson says the next finger is longer.", video: "china" },
-  { theater: "Delta Finger", line: "Dry ground between the water.", brief: "Do not fight in the water. Hold the terrace and walk the finger.", hudson: "The finger is ours. Hudson is cutting the rest of the delta.", mid: "mid-ridge", video: "china-02" },
-  { theater: "Terrace Two", line: "The second shelf.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Low Finger", line: "A wet approach.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Mist Pad", line: "A pad in the mist.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Inland Glass", line: "The spire leaves the water.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Long Approach", line: "A straight push dies here.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Shelf Fire", line: "Guns on the terrace.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Delta End", line: "Where the water closes.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
-  { theater: "Pearl Crown", line: "The last glass inland.", brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." },
+  { theater: "Delta Finger", line: "Dry ground between the water.", brief: "Do not fight in the water. Hold the terrace and walk the finger.", hudson: "The finger is ours. The second terrace is next.", mid: "mid-ridge", video: "china-02" },
+  { theater: "Terrace Two", line: "The second shelf.", brief: "The second terrace is dry. Hold it. The water is not a road.", hudson: "Second shelf held. The next finger is wet.", video: "china-03" },
+  { theater: "Low Finger", line: "A wet approach.", brief: "Walk the dry center of the finger. The edges are water.", hudson: "The finger is crossed. Their pad is in the mist.", video: "china-04" },
+  { theater: "Mist Pad", line: "A pad in the mist.", brief: "Build in the mist and keep the lights low. They hear engines.", hudson: "The pad is up. The spire has left the water.", video: "china-05" },
+  { theater: "Inland Glass", line: "The spire leaves the water.", brief: "The glass is inland now. Take the dry terraces, not the river.", hudson: "Inland ground is ours. The approach is long and open.", video: "china-06" },
+  { theater: "Long Approach", line: "A straight push dies here.", brief: "Do not push straight. The terrace guns own a straight line.", hudson: "The approach is taken. Their guns are still on the shelf.", video: "china-07" },
+  { theater: "Shelf Fire", line: "Guns on the terrace.", brief: "Silence the terrace guns before the last channel.", hudson: "The guns are quiet. The delta is closing.", video: "china-08" },
+  { theater: "Delta End", line: "Where the water closes.", brief: "One channel left. Hold the last dry bank.", hudson: "The channel is held. The crown is inland.", video: "china-09" },
+  { theater: "Pearl Crown", line: "The last glass inland.", brief: "The pearl crown is the last spire off the water. Break it.", hudson: "Pearl Shelf is closed. Hudson is done with the delta.", video: "china-10" },
 ]);
 
 const australia = arc("australia", {
@@ -139,10 +139,16 @@ const australia = arc("australia", {
   { theater: "Last Mesa", line: "The glass on the far rock.", brief: "The last mesa is the spire. Break it and the interior is yours.", hudson: "Red Interior is closed. Hudson has nothing left to cut out here.", video: "australia-05" },
 ]);
 
-function short(countryId: string, skin: Skin, first: Row, rest: [string, string][]): Chapter[] {
+function short(countryId: string, skin: Skin, first: Row, rest: [string, string, string][]): Chapter[] {
   return arc(countryId, skin, [
     first,
-    ...rest.map(([theater, line]) => ({ theater, line, brief: "Still in the cutting room.", hudson: "Hudson is still cutting this brief." })),
+    ...rest.map(([theater, line, video]) => ({
+      theater,
+      line,
+      brief: line,
+      hudson: `${theater} is held. The next brief stays sealed until this film is watched or this ground is won.`,
+      video,
+    })),
   ]);
 }
 
@@ -150,66 +156,66 @@ const korea = short("korea", {
   country: "South Korea",
   water: "river", waterAmt: 0.85, forest: 0.7, peaks: 0.55, salt: 3.3,
   sky: ["#163044", "#7ea0b0"], ground: [78, 108, 72], canopy: "#1f6a3c", trunk: "#3e2a1c", waterFill: "#186080", snow: false,
-}, { theater: "Han Line", line: "A wide river, dense cover, and a ridge on the far bank.", brief: "The Han Line is a wet cut. Helion holds the near bank. The glass is across the water.", hudson: "The near bank is held. Hudson is still cutting the far ridge.", video: "korea" }, [
-  ["Ford Light", "The first crossing."],
-  ["Tree Bank", "Infantry in the cover."],
-  ["Far Ridge", "Guns over the water."],
-  ["Han Glass", "The spire on the ridge."],
+}, { theater: "Han Line", line: "A wide river, dense cover, and a ridge on the far bank.", brief: "The Han Line is a wet cut. Helion holds the near bank. The glass is across the water.", hudson: "The near bank is held. The first ford is next.", video: "korea" }, [
+  ["Ford Light", "The first crossing.", "korea-02"],
+  ["Tree Bank", "Infantry in the cover.", "korea-03"],
+  ["Far Ridge", "Guns over the water.", "korea-04"],
+  ["Han Glass", "The spire on the ridge.", "korea-05"],
 ]);
 
 const japan = short("japan", {
   country: "Japan",
   water: "coast", waterAmt: 0.75, forest: 0.66, peaks: 0.8, salt: 4.4,
   sky: ["#1a2838", "#d0a0a8"], ground: [86, 104, 70], canopy: "#245c34", trunk: "#3a2818", waterFill: "#14586e", snow: false,
-}, { theater: "Inland Sea", line: "Coast, cedar, and a volcanic ridge.", brief: "Inland Sea. Helion lands on the coast. The water is at your back and the ridge is ahead.", hudson: "The beach is held. Hudson is still cutting the ridge.", video: "japan" }, [
-  ["Cedar Shelf", "Trees above the water."],
-  ["Low Air", "Aircraft off the sea."],
-  ["Volcanic Cut", "The rock road."],
-  ["Sea Glass", "The spire in the ridge."],
+}, { theater: "Inland Sea", line: "Coast, cedar, and a volcanic ridge.", brief: "Inland Sea. Helion lands on the coast. The water is at your back and the ridge is ahead.", hudson: "The beach is held. The cedar shelf is next.", video: "japan" }, [
+  ["Cedar Shelf", "Trees above the water.", "japan-02"],
+  ["Low Air", "Aircraft off the sea.", "japan-03"],
+  ["Volcanic Cut", "The rock road.", "japan-04"],
+  ["Sea Glass", "The spire in the ridge.", "japan-05"],
 ]);
 
 const uk = short("uk", {
   country: "United Kingdom",
   water: "coast", waterAmt: 0.5, forest: 0.3, peaks: 0.25, salt: 1.2,
   sky: ["#2a3340", "#9aa6b0"], ground: [96, 108, 78], canopy: "#3e6244", trunk: "#3c3024", waterFill: "#3a5a68", snow: false,
-}, { theater: "North Glass", line: "Grey water, low moor, and a short horizon.", brief: "North Glass. Low cloud, a grey cut of water, and ionite in the moor.", hudson: "The moor is held. Hudson is still cutting the short horizon.", video: "uk" }, [
-  ["Grey Cut", "Water at the flank."],
-  ["Moor Pad", "Open ground, so build walls."],
-  ["Short Lane", "The push is not long."],
-  ["Low Spire", "The glass is close."],
+}, { theater: "North Glass", line: "Grey water, low moor, and a short horizon.", brief: "North Glass. Low cloud, a grey cut of water, and ionite in the moor.", hudson: "The moor is held. The grey cut is next.", video: "uk" }, [
+  ["Grey Cut", "Water at the flank.", "uk-02"],
+  ["Moor Pad", "Open ground, so build walls.", "uk-03"],
+  ["Short Lane", "The push is not long.", "uk-04"],
+  ["Low Spire", "The glass is close.", "uk-05"],
 ]);
 
 const india = short("india", {
   country: "India",
   water: "river", waterAmt: 0.8, forest: 0.48, peaks: 0.4, salt: 7.7,
   sky: ["#243028", "#e0c080"], ground: [140, 120, 64], canopy: "#4a7a32", trunk: "#5a3c24", waterFill: "#1a7068", snow: false,
-}, { theater: "Deccan Shelf", line: "A monsoon river, hard plateau, and a long gun line.", brief: "Deccan Shelf. The river is up. The plateau is the only clean ground for a base.", hudson: "The shelf is held. Hudson is still cutting the monsoon road.", video: "india" }, [
-  ["Monsoon Road", "The river stays high."],
-  ["Scrub Line", "Infantry off the shelf."],
-  ["Gun Shelf", "Tanks stay up high."],
-  ["Last Rise", "The spire past the rise."],
+}, { theater: "Deccan Shelf", line: "A monsoon river, hard plateau, and a long gun line.", brief: "Deccan Shelf. The river is up. The plateau is the only clean ground for a base.", hudson: "The shelf is held. The monsoon road is next.", video: "india" }, [
+  ["Monsoon Road", "The river stays high.", "india-02"],
+  ["Scrub Line", "Infantry off the shelf.", "india-03"],
+  ["Gun Shelf", "Tanks stay up high.", "india-04"],
+  ["Last Rise", "The spire past the rise.", "india-05"],
 ]);
 
 const france = short("france", {
   country: "France",
   water: "river", waterAmt: 0.6, forest: 0.55, peaks: 0.5, salt: 9.1,
   sky: ["#1e3044", "#b7c4c8"], ground: [100, 112, 70], canopy: "#2f6840", trunk: "#3e2c1e", waterFill: "#1a6074", snow: false,
-}, { theater: "Atlantic Cut", line: "An estuary, hedgerows, and a stone ridge.", brief: "Atlantic Cut. The estuary floods the low ground. Helion builds on the hedgerow shelf.", hudson: "The shelf is held. Hudson is still cutting the hedgerows.", video: "france" }, [
-  ["Hedgerow", "Trees used as walls."],
-  ["Estuary", "Do not fight in the flood."],
-  ["Stone Road", "The ridge road."],
-  ["Crown Glass", "The spire on the stone."],
+}, { theater: "Atlantic Cut", line: "An estuary, hedgerows, and a stone ridge.", brief: "Atlantic Cut. The estuary floods the low ground. Helion builds on the hedgerow shelf.", hudson: "The shelf is held. The hedgerow is next.", video: "france" }, [
+  ["Hedgerow", "Trees used as walls.", "france-02"],
+  ["Estuary", "Do not fight in the flood.", "france-03"],
+  ["Stone Road", "The ridge road.", "france-04"],
+  ["Crown Glass", "The spire on the stone.", "france-05"],
 ]);
 
 const brazil = short("brazil", {
   country: "Brazil",
   water: "river", waterAmt: 0.9, forest: 0.86, peaks: 0.3, salt: 10.5,
   sky: ["#102018", "#6a9870"], ground: [62, 92, 48], canopy: "#145028", trunk: "#2e2014", waterFill: "#0e5048", snow: false,
-}, { theater: "Green Margin", line: "Heavy canopy, a dark river, and almost no open ground.", brief: "Green Margin. The canopy hides both sides. The river is the only clean line on the map.", hudson: "The river line is held. Hudson is still cutting the deep green.", video: "brazil" }, [
-  ["First Lane", "Cut a lane before the tanks."],
-  ["Dark Water", "The river is the map."],
-  ["Canopy Yard", "Infantry can live here."],
-  ["Green Scar", "The spire in the trees."],
+}, { theater: "Green Margin", line: "Heavy canopy, a dark river, and almost no open ground.", brief: "Green Margin. The canopy hides both sides. The river is the only clean line on the map.", hudson: "The river line is held. Cut the first lane next.", video: "brazil" }, [
+  ["First Lane", "Cut a lane before the tanks.", "brazil-02"],
+  ["Dark Water", "The river is the map.", "brazil-03"],
+  ["Canopy Yard", "Infantry can live here.", "brazil-04"],
+  ["Green Scar", "The spire in the trees.", "brazil-05"],
 ]);
 
 export const COUNTRIES: { id: string; chapters: Chapter[] }[] = [
