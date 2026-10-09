@@ -97,7 +97,7 @@ export interface Floater {
 }
 
 export interface GameEvent {
-  t: "shot" | "boom" | "build" | "ui" | "bad" | "win" | "lose";
+  t: "shot" | "boom" | "build" | "ui" | "bad" | "win" | "lose" | "half";
   kind?: string;
   big?: boolean;
 }
@@ -208,6 +208,7 @@ export class Sim {
   credits: [number, number] = [2100, 1700];
   time = 0;
   winner: Team | null = null;
+  relief = false;
   events: GameEvent[] = [];
   messages: { text: string; life: number }[] = [];
   floaters: Floater[] = [];
@@ -239,7 +240,7 @@ export class Sim {
   abilityArm: "strike" | "nuke" | null = null;
   private by = new Map<number, Ent>();
 
-  constructor(chapterId = "usa") {
+  constructor(chapterId = "usa-01") {
     const chapter = chapterById(chapterId);
     this.chapterId = chapter.id;
     this.pois = buildMap(chapter);
@@ -365,6 +366,16 @@ export class Sim {
   tick(dt: number): void {
     if (this.winner !== null) return;
     this.time += dt;
+    if (!this.relief && this.time >= 40) {
+      this.relief = true;
+      this.addUnit("viper", 1, 2000, 500);
+      this.addUnit("rifle", 1, 1960, 540);
+      this.addUnit("rifle", 1, 2020, 540);
+      this.addUnit("lancer", 1, 2080, 580);
+      this.messages.unshift({ text: "Vesper relief column. Halfway push.", life: 7 });
+      this.events.push({ t: "half" });
+      this.uiDirty = true;
+    }
     this.aiAcc += dt;
     this.aiCool -= dt;
     for (const m of this.messages) m.life -= dt;

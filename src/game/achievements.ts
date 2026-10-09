@@ -1,3 +1,5 @@
+import { CHAPTERS } from "./campaign";
+
 export interface Badge {
   id: string;
   name: string;
@@ -42,7 +44,7 @@ const CATALOG: Badge[] = [
   { id: "spire", name: "Spire dust", detail: "Win a chapter." },
   { id: "fallen", name: "Horizon lost", detail: "Lose a spire and finish the fight." },
   { id: "three", name: "Three theaters", detail: "Win three different chapters." },
-  { id: "all", name: "Full shelf", detail: "Win every chapter." },
+  { id: "all", name: "Full shelf", detail: "Win every filmed chapter." },
 ];
 
 export function allBadges(): { badge: Badge; owned: boolean }[] {
@@ -65,7 +67,7 @@ export function noteCombat(chapterId: string, downed: Downed, finished: "win" | 
   if (finished === "win") want.push("spire");
   if (finished === "lose") want.push("fallen");
   if (wins.size >= 3) want.push("three");
-  if (wins.size >= 10) want.push("all");
+  if (wins.size >= CHAPTERS.filter((c) => c.video).length) want.push("all");
   const fresh = want.filter((id) => !have.has(id));
   for (const id of fresh) have.add(id);
   write({ ids: [...have], wins: [...wins] });

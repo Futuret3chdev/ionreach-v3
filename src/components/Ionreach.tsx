@@ -28,7 +28,9 @@ import { Renderer, type Cam } from "@/game/render";
 import { Sim, type HudSnap } from "@/game/sim";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { Briefing } from "@/components/Briefing";
-import { CHAPTERS, chapterById, type Chapter } from "@/game/campaign";
+import { Hudson } from "@/components/Hudson";
+import { chapterById, countryOf, isOpen, nextPlayable, type Chapter } from "@/game/campaign";
+import { markCleared, markWatched } from "@/game/progress";
 import { allBadges, noteCombat, type Badge } from "@/game/achievements";
 import { grantMarks, readProfile, writeSave, type SaveSlot } from "@/lib/meta/profile";
 
@@ -126,10 +128,15 @@ export function Ionreach() {
   const [settings, setSettings] = useState(false);
   const [picking, setPicking] = useState(false);
   const [brief, setBrief] = useState<Chapter | null>(null);
+  const [pickingCountry, setPickingCountry] = useState<string | null>(null);
+  const [storyTick, setStoryTick] = useState(0);
+  const [mid, setMid] = useState<string | null>(null);
+  const [hudson, setHudson] = useState<Chapter | null>(null);
+  const midPlayed = useRef(false);
   const [records, setRecords] = useState(false);
   const [earned, setEarned] = useState<Badge[]>([]);
   const [toasts, setToasts] = useState<Badge[]>([]);
-  const chapterRef = useRef("usa");
+  const chapterRef = useRef("usa-01");
   const earnedRef = useRef<Badge[]>([]);
   const [tiersOpen, setTiersOpen] = useState(false);
   const [abilitiesOpen, setAbilitiesOpen] = useState(false);
@@ -253,10 +260,22 @@ export function Ionreach() {
           else if (ev.t === "win") sfx.current.win();
           else sfx.current.lose();
           const fresh = noteCombat(chapterRef.current, sim.downed, ev.t === "boom" ? null : ev.t);
+          if (ev.t === "win") {
+            markCleared(chapterRef.current);
+            setStoryTick((n) => n + 1);
+          }
           if (fresh.length) {
             earnedRef.current = [...earnedRef.current, ...fresh];
             setToasts(fresh);
             setEarned(earnedRef.current);
+          }
+        } else if (ev.t === "half") {
+          const ch = chapterById(chapterRef.current);
+          if (ch.mid && !midPlayed.current) {
+            midPlayed.current = true;
+            pauseRef.current = true;
+            sim.paused = true;
+            setMid(ch.mid);
           }
         }
         else if (ev.t === "build") sfx.current.build();
@@ -516,6 +535,8 @@ export function Ionreach() {
     sfx.current.unlock();
     if (musicOnRef.current) sfx.current.startScore();
     chapterRef.current = id;
+    midPlayed.current = false;
+    setMid(null);
     earnedRef.current = [];
     setEarned([]);
     setToasts([]);
@@ -609,7 +630,7 @@ export function Ionreach() {
           <p className="font-display text-sm tracking-[0.28em] text-ion">VERSION 3 · HELION DIRECTORATE · T3X</p>
           <h1 className="font-display text-6xl leading-none font-bold text-fg md:text-8xl">IONREACH</h1>
           <p className="mt-2 max-w-xl text-base text-muted md:text-lg">
-            Ten countries. A story cutscene, then the fight. Men, tanks, and aircraft on a map with rivers, trees, and mountains.
+            Ten countries. Each one is its own chapter chain. Watch the brief to the end, or win the fight, before the next one opens.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" onClick={() => setPicking(true)} className="min-h-11 bg-ion px-5 font-display text-lg font-semibold text-bg">
@@ -652,27 +673,130 @@ export function Ionreach() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-display text-xs tracking-[0.22em] text-ion">VERSION 3</p>
-                <h2 className="font-display text-4xl">Choose a chapter</h2>
+                <h2 className="font-display text-4xl">{pickingCountry ? countryOf(pickingCountry)[0]?.country : "Choose a country"}</h2>
               </div>
-              <button type="button" onClick={() => setPicking(false)} className="min-h-11 border border-line px-3 font-display">
-                Close
+              <button
+                type="button"
+                onClick={() => {
+                  if (pickingCountry) setPickingCountry(null);
+                  else setPicking(false);
+                }}
+                className="min-h-11 border border-line px-3 font-display"
+              >
+                {pickingCountry ? "Countries" : "Close"}
               </button>
             </div>
-            <p className="mt-2 max-w-2xl text-sm text-muted">Each country is its own story. A cutscene plays first, then you drop in. Skip it if you already know the ground.</p>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {CHAPTERS.map((chapter) => (
-                <button key={chapter.id} type="button" onClick={() => { setPicking(false); setBrief(chapter); }} className="border border-line bg-surface p-4 text-left">
-                  <p className="font-display text-xs tracking-[0.16em] text-ion">{chapter.country}</p>
-                  <p className="font-display text-2xl">{chapter.theater}</p>
-                  <p className="mt-1 text-sm text-muted">{chapter.line}</p>
-                </button>
-              ))}
-            </div>
+            <p className="mt-2 max-w-2xl text-sm text-muted">
+              A chapter stays sealed until you watch the previous film to the end, or you win that fight. Skipping the film does not open the next one. Major Hudson checks in between fights. Some battles cut to a transmission when the relief column arrives.
+            </p>
+            {!pickingCountry && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {["usa", "russia", "china", "australia", "korea", "japan", "uk", "india", "france", "brazil"].map((id) => {
+                  const chapters = countryOf(id);
+                  const filmed = chapters.filter((c) => c.video).length;
+                  return (
+                    <button key={id} type="button" onClick={() => setPickingCountry(id)} className="border border-line bg-surface p-4 text-left">
+                      <p className="font-display text-2xl">{chapters[0]?.country}</p>
+                      <p className="mt-1 text-sm text-muted">
+                        {chapters.length} chapters · {filmed} filmed
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {pickingCountry && (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {countryOf(pickingCountry).map((chapter, index, list) => {
+                  void storyTick;
+                  const open = isOpen(list, index);
+                  return (
+                    <button
+                      key={chapter.id}
+                      type="button"
+                      disabled={!open}
+                      onClick={() => {
+                        if (!open) return;
+                        setPicking(false);
+                        setBrief(chapter);
+                      }}
+                      className="border border-line bg-surface p-4 text-left disabled:opacity-50"
+                    >
+                      <p className="font-display text-xs tracking-[0.16em] text-ion">
+                        CHAPTER {chapter.index}
+                        {!open && !chapter.video ? " · CUTTING ROOM" : ""}
+                        {!open && chapter.video ? " · SEALED" : ""}
+                      </p>
+                      <p className="font-display text-2xl">{chapter.theater}</p>
+                      <p className="mt-1 text-sm text-muted">{open ? chapter.line : chapter.video ? "Watch the previous film to the end, or win that fight." : "This brief is still being cut."}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {brief && <Briefing chapter={brief} onBack={() => { setBrief(null); setPicking(true); }} onDone={() => deploy(brief.id)} />}
+      {brief && (
+        <Briefing
+          chapter={brief}
+          onBack={() => {
+            setBrief(null);
+            setPicking(true);
+          }}
+          onDone={(watched) => {
+            if (watched) {
+              markWatched(brief.id);
+              setStoryTick((n) => n + 1);
+            }
+            deploy(brief.id);
+          }}
+        />
+      )}
+
+      {mid && (
+        <div className="absolute inset-0 z-30 flex flex-col bg-black">
+          <video className="min-h-0 w-full flex-1 bg-black object-contain" src={`/media/briefings/${mid}.mp4`} autoPlay playsInline onEnded={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); }} />
+          <div className="flex items-center justify-between gap-3 border-t border-line bg-bg px-4 py-3">
+            <p className="font-display text-sm tracking-[0.16em] text-gold">TRANSMISSION · HALFWAY</p>
+            <button
+              type="button"
+              onClick={() => {
+                pauseRef.current = false;
+                if (simRef.current) simRef.current.paused = false;
+                setMid(null);
+              }}
+              className="min-h-11 bg-ion px-4 font-display text-bg"
+            >
+              Back to the fight
+            </button>
+          </div>
+        </div>
+      )}
+
+      {hudson && (
+        <Hudson
+          theater={hudson.theater}
+          line={hudson.hudson}
+          onClose={() => {
+            setHudson(null);
+            setPickingCountry(hudson.countryId);
+            setPicking(true);
+            setPhase("title");
+            phaseRef.current = "title";
+          }}
+          onNext={
+            nextPlayable(hudson.id)
+              ? () => {
+                  const next = nextPlayable(hudson.id);
+                  setHudson(null);
+                  if (next) setBrief(next);
+                }
+              : null
+          }
+        />
+      )}
 
       {records && (
         <div className="absolute inset-0 z-40 flex items-end justify-center bg-bg/75 p-4 md:items-center">
@@ -899,7 +1023,12 @@ export function Ionreach() {
                 ))}
               </ul>
             )}
-            <div className="mt-5 flex gap-3">
+            <div className="mt-5 flex flex-wrap gap-3">
+              {phase === "win" && (
+                <button type="button" onClick={() => setHudson(chapterById(chapterRef.current))} className="min-h-11 bg-gold px-4 font-display text-bg">
+                  Hudson
+                </button>
+              )}
               <button type="button" onClick={() => deploy()} className="min-h-11 bg-ion px-4 font-display text-bg">
                 Redeploy
               </button>

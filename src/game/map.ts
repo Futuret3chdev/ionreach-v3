@@ -66,7 +66,7 @@ function clearPad(tiles: Uint8Array, ion: Uint16Array, c0: number, r0: number, c
   }
 }
 
-export function buildMap(chapter: Chapter = chapterById("usa")): BuiltMap {
+export function buildMap(chapter: Chapter = chapterById("usa-01")): BuiltMap {
   const tiles = new Uint8Array(COLS * ROWS);
   const ion = new Uint16Array(COLS * ROWS);
   const style = new Float32Array(COLS * ROWS);

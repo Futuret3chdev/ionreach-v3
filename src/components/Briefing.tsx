@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Chapter } from "@/game/campaign";
 
-export function Briefing({ chapter, onDone, onBack }: { chapter: Chapter; onDone: () => void; onBack: () => void }) {
+export function Briefing({ chapter, onDone, onBack }: { chapter: Chapter; onDone: (watched: boolean) => void; onBack: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const done = useRef(false);
   const finish = useRef(onDone);
@@ -22,10 +22,10 @@ export function Briefing({ chapter, onDone, onBack }: { chapter: Chapter; onDone
     void video.play().catch(() => setBlocked(true));
   }, [chapter.id]);
 
-  function finishOnce() {
+  function finishOnce(watched: boolean) {
     if (done.current) return;
     done.current = true;
-    finish.current();
+    finish.current(watched);
   }
 
   function play() {
@@ -41,11 +41,11 @@ export function Briefing({ chapter, onDone, onBack }: { chapter: Chapter; onDone
         ref={videoRef}
         key={chapter.id}
         className="min-h-0 w-full flex-1 bg-black object-contain"
-        src={`/media/briefings/${chapter.id}.mp4`}
+        src={`/media/briefings/${chapter.video}.mp4`}
         poster="/media/poster.jpg"
         playsInline
         autoPlay
-        onEnded={finishOnce}
+        onEnded={() => finishOnce(true)}
       />
       {blocked && (
         <button type="button" onClick={play} className="absolute inset-0 z-10 flex items-center justify-center bg-black/45">
@@ -63,7 +63,7 @@ export function Briefing({ chapter, onDone, onBack }: { chapter: Chapter; onDone
           <button type="button" onClick={onBack} className="min-h-11 border border-line px-3 font-display">
             Back
           </button>
-          <button type="button" onClick={finishOnce} className="min-h-11 bg-ion px-4 font-display text-bg">
+          <button type="button" onClick={() => finishOnce(false)} className="min-h-11 bg-ion px-4 font-display text-bg">
             Drop in
           </button>
         </div>
