@@ -142,6 +142,9 @@ export function Ionreach() {
   const [pickMode, setPickMode] = useState(false);
   const [tray, setTray] = useState<Tray>("base");
   const [chrome, setChrome] = useState(true);
+  const [menuChrome, setMenuChrome] = useState(true);
+  const [menuTool, setMenuTool] = useState<MenuTool | null>(null);
+  const [settingsTab, setSettingsTab] = useState<"wallet" | "saves">("wallet");
   const [full, setFull] = useState(false);
   const [tools, setTools] = useState({ command: true, select: true, map: false, powers: false });
   const [records, setRecords] = useState(false);
@@ -687,27 +690,170 @@ export function Ionreach() {
       />
       {!battle && <div className="absolute inset-0 bg-bg/45" />}
       {!battle && (
-        <div className="relative z-10 flex h-full items-start justify-end p-4 md:p-10">
-          <div className="flex w-full max-w-xs flex-col items-stretch gap-3">
-            <div className="border border-[#8ea0b0]/70 bg-black/55 px-4 py-3 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm">
-              <p className="font-display text-[11px] tracking-[0.42em] text-ion">HELION DIRECTORATE</p>
-              <h1 className="font-display text-5xl leading-none font-bold md:text-6xl">IONREACH</h1>
-              <p className="font-display text-sm tracking-[0.28em] text-fg/80">GLASS HORIZON</p>
+        <div className="absolute inset-0 z-10 flex flex-col">
+          <header className={(menuChrome ? "flex " : "hidden ") + "h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[#1e3a5f] bg-[#07101c]/95 px-2"}>
+            <div className="min-w-0">
+              <p className="truncate font-display text-sm leading-tight">IONREACH</p>
+              <p className="truncate text-[11px] tracking-[0.16em] text-ion">GLASS HORIZON</p>
             </div>
-            <nav className="flex flex-col gap-2">
-              <MenuPlate onClick={() => setPicking(true)}>Campaign</MenuPlate>
-              <MenuPlate onClick={() => setSkirmish(true)}>Multiplayer</MenuPlate>
-              <MenuPlate onClick={() => { pendingLoad.current = true; setSettings(true); }}>Load</MenuPlate>
-              <MenuPlate onClick={() => setSettings(true)}>Settings</MenuPlate>
-              <MenuPlate onClick={() => openCinema(0)}>Trailer</MenuPlate>
-              <MenuPlate onClick={() => setManual(true)}>Field manual</MenuPlate>
-              <MenuPlate onClick={() => setRecords(true)}>Achievements</MenuPlate>
-            </nav>
-            <p className="text-right text-[11px] text-muted">
-              Original battle sim. Not affiliated with any classic strategy publisher.
-              {best ? ` Fastest hold: ${clock(best)}.` : ""}
-            </p>
+            <button type="button" onClick={toggleMute} className="ml-auto inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label={muted ? "Sound on" : "Mute"}>
+              {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+            </button>
+            <button type="button" onClick={toggleFull} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Full screen">
+              {full ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+            </button>
+            <button type="button" onClick={() => setMenuChrome(false)} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Hide panels">
+              <EyeOff className="size-4" />
+            </button>
+          </header>
+          <div className="relative min-h-0 flex-1">
+            {!menuChrome && (
+              <button type="button" onClick={() => setMenuChrome(true)} className="absolute top-2 right-2 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
+                Show panels
+              </button>
+            )}
           </div>
+          <footer className={(menuChrome ? "" : "hidden ") + "shrink-0 border-t border-[#1e3a5f] bg-[#07101c]/95"}>
+            <div className="flex gap-1 overflow-x-auto px-2 py-1">
+              {(
+                [
+                  ["campaign", "Campaign"],
+                  ["multi", "Multiplayer"],
+                  ["settings", "Settings"],
+                  ["manual", "Manual"],
+                  ["records", "Achievements"],
+                  ["trailer", "Trailer"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => {
+                    if (id === "settings") setSettingsTab("wallet");
+                    setMenuTool((cur) => (cur === id ? null : id));
+                  }}
+                  className={"min-h-9 shrink-0 border px-2 font-display text-xs " + (menuTool === id ? "border-ion bg-[#12343a] text-ion" : "border-line text-muted")}
+                >
+                  {menuTool === id ? "Hide " : "Show "}
+                  {label}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsTab("saves");
+                  setMenuTool("settings");
+                }}
+                className={"min-h-9 shrink-0 border px-2 font-display text-xs " + (menuTool === "settings" && settingsTab === "saves" ? "border-ion bg-[#12343a] text-ion" : "border-line text-muted")}
+              >
+                Load
+              </button>
+            </div>
+            {menuTool === "campaign" && (
+              <div className="max-h-[42vh] overflow-y-auto px-2 pb-2">
+                <div className="flex gap-2 overflow-x-auto">
+                  {COUNTRY_IDS.map((id) => {
+                    const chapters = countryOf(id);
+                    const on = pickingCountry === id;
+                    return (
+                      <button key={id} type="button" onClick={() => setPickingCountry(on ? null : id)} className={"w-28 shrink-0 overflow-hidden border text-left " + (on ? "border-ion" : "border-line")}>
+                        <Flag id={id} className="block h-10 w-full" />
+                        <span className="block px-1 py-1">
+                          <span className="block truncate font-display text-xs">{chapters[0]?.country}</span>
+                          <span className="block text-[10px] text-muted">{chapters.length} chapters</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {pickingCountry && (
+                  <div className="mt-2 flex gap-2 overflow-x-auto">
+                    {countryOf(pickingCountry).map((chapter, index, list) => {
+                      void storyTick;
+                      const open = isOpen(list, index);
+                      return (
+                        <article key={chapter.id} className="w-52 shrink-0 border border-line bg-[#101820] p-2">
+                          <p className="font-display text-[10px] tracking-[0.14em] text-ion">
+                            CHAPTER {chapter.index}
+                            {!open ? " · SEALED" : ""}
+                          </p>
+                          <p className="truncate font-display text-sm">{chapter.theater}</p>
+                          <p className="mt-1 line-clamp-2 text-[11px] text-muted">{open ? chapter.line : "Watch the previous film, or win that fight."}</p>
+                          <div className="mt-2 flex gap-1">
+                            <button type="button" disabled={!chapter.video} onClick={() => { if (!chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 border border-line px-2 font-display text-xs disabled:text-muted">Watch</button>
+                            <button type="button" disabled={!open || !chapter.video} onClick={() => { if (!open || !chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 bg-ion px-2 font-display text-xs text-bg disabled:bg-line disabled:text-muted">Play</button>
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+            {menuTool === "multi" && (
+              <SkirmishNet dock onClose={() => setMenuTool(null)} onHost={(setup) => deploy(chapterRef.current, setup)} />
+            )}
+            {menuTool === "settings" && (
+              <SettingsPanel
+                open
+                dock
+                initialTab={settingsTab}
+                onClose={() => setMenuTool(null)}
+                onSave={(index) => {
+                  const sim = simRef.current;
+                  if (!sim) return null;
+                  const slot: SaveSlot = { name: `Slot ${index + 1}`, savedAt: Date.now(), time: sim.time, blob: sim.exportState() };
+                  writeSave(index, slot);
+                  return slot;
+                }}
+                onLoad={(slot) => {
+                  const blob = slot.blob as { time: number; credits: number[]; nextId: number; winner: 0 | 1 | null; ion: number[]; ents: [] };
+                  if (!simRef.current) {
+                    const sim = new Sim(chapterRef.current);
+                    simRef.current = sim;
+                    phaseRef.current = "battle";
+                    setPhase("battle");
+                    setBattleKey((k) => k + 1);
+                  }
+                  simRef.current?.importState(blob);
+                  setHud(simRef.current?.snapshot() ?? null);
+                  setMenuTool(null);
+                  setSettings(false);
+                  setBrief(null);
+                  pendingLoad.current = false;
+                }}
+                musicOn={musicOn}
+                onMusic={(on) => {
+                  musicOnRef.current = on;
+                  setMusicOn(on);
+                  if (on) sfx.current.startScore();
+                  else sfx.current.stopScore();
+                }}
+              />
+            )}
+            {menuTool === "manual" && (
+              <ul className="max-h-[32vh] space-y-1 overflow-y-auto px-3 pb-2 text-xs text-muted">
+                <li>The top bar and this dock can be hidden. Show panels brings them back.</li>
+                <li>Select on the battle bar draws a box. Shift-click adds. Drag pans when Select is off.</li>
+                <li>Show or hide Command, Selection, Map, and Powers under the map.</li>
+                <li>Q or A-move, then click, is attack-move. H holds. R repairs. X scraps a building.</li>
+                <li>Win by destroying the enemy command spire.</li>
+              </ul>
+            )}
+            {menuTool === "records" && (
+              <ul className="max-h-[32vh] space-y-1 overflow-y-auto px-2 pb-2">
+                {allBadges().map(({ badge, owned }) => (
+                  <li key={badge.id} className={owned ? "border border-gold/50 px-2 py-1" : "border border-line px-2 py-1 opacity-50"}>
+                    <p className="font-display text-sm">{badge.name}</p>
+                    <p className="text-[11px] text-muted">{owned ? "Earned. " : "Locked. "}{badge.detail}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {menuTool === "trailer" && (
+              <p className="px-3 pb-2 text-xs text-muted">The film behind this menu is the trailer. Use sound on the top bar. Full screen hides the browser chrome.</p>
+            )}
+          </footer>
         </div>
       )}
 
@@ -718,117 +864,10 @@ export function Ionreach() {
           <div className="absolute inset-x-0 bottom-0 z-30 flex flex-wrap items-center gap-2 border-t border-line bg-bg px-3 py-3">
             <button type="button" onClick={() => { setTrailerChoice(false); closeCinema(); }} className="min-h-11 border border-line bg-surface px-4 font-display">Back to menu</button>
             <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
-            <button type="button" disabled={!trailerChoice} onClick={() => { setTrailerChoice(false); closeCinema(); setPicking(true); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
+            <button type="button" disabled={!trailerChoice} onClick={() => { setTrailerChoice(false); closeCinema(); setMenuTool("campaign"); setMenuChrome(true); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
             {!trailerChoice && <button type="button" onClick={() => setTrailerChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
           </div>
         </div>
-      )}
-
-      {picking && (
-        <div className="absolute inset-0 z-40 overflow-y-auto bg-bg p-4 md:p-8">
-          <div className="mx-auto max-w-5xl">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="font-display text-xs tracking-[0.22em] text-ion">VERSION 3</p>
-                <h2 className="font-display text-4xl">{pickingCountry ? countryOf(pickingCountry)[0]?.country : "Choose a country"}</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (pickingCountry) setPickingCountry(null);
-                  else setPicking(false);
-                }}
-                className="min-h-11 border border-line px-3 font-display"
-              >
-                {pickingCountry ? "Countries" : "Close"}
-              </button>
-            </div>
-            <p className="mt-2 max-w-2xl text-sm text-muted">
-              A chapter stays sealed until you watch the previous film to the end, or you win that fight. Skipping the film does not open the next one. Major Hudson checks in between fights. Some battles cut to a transmission when the relief column arrives.
-            </p>
-            {!pickingCountry && (
-              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                {COUNTRY_IDS.map((id) => {
-                  const chapters = countryOf(id);
-                  return (
-                    <button key={id} type="button" onClick={() => setPickingCountry(id)} className="overflow-hidden border border-line bg-surface text-left">
-                      <Flag id={id} />
-                      <span className="block px-2 py-2">
-                        <span className="block font-display text-base leading-tight">{chapters[0]?.country}</span>
-                        <span className="block text-[11px] text-muted">{chapters.length} chapters</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {pickingCountry && (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {countryOf(pickingCountry).map((chapter, index, list) => {
-                  void storyTick;
-                  const open = isOpen(list, index);
-                  return (
-                    <article key={chapter.id} className="border border-line bg-surface p-4 text-left">
-                      <p className="font-display text-xs tracking-[0.16em] text-ion">
-                        CHAPTER {chapter.index}
-                        {!open && !chapter.video ? " · CUTTING ROOM" : ""}
-                        {!open && chapter.video ? " · SEALED" : ""}
-                      </p>
-                      <p className="font-display text-2xl">{chapter.theater}</p>
-                      <p className="mt-1 text-sm text-muted">{open ? chapter.line : chapter.video ? "Watch the previous film to the end, or win that fight." : "This brief is still being cut."}</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          disabled={!chapter.video}
-                          onClick={() => {
-                            if (!chapter.video) return;
-                            setPicking(false);
-                            setBrief(chapter);
-                          }}
-                          className="min-h-11 border border-line px-3 font-display disabled:cursor-not-allowed disabled:text-muted"
-                        >
-                          Watch
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!open || !chapter.video}
-                          onClick={() => {
-                            if (!open || !chapter.video) return;
-                            setPicking(false);
-                            setBrief(chapter);
-                          }}
-                          className="min-h-11 bg-ion px-3 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
-                        >
-                          Play
-                        </button>
-                        <button type="button" onClick={() => setPickingCountry(null)} className="min-h-11 border border-line px-3 font-display">
-                          Go back
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            pendingLoad.current = true;
-                            setSettings(true);
-                          }}
-                          className="min-h-11 border border-line px-3 font-display"
-                        >
-                          Load
-                        </button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {skirmish && (
-        <SkirmishNet
-          onClose={() => setSkirmish(false)}
-          onHost={(setup) => deploy(chapterRef.current, setup)}
-        />
       )}
 
       {brief && (
@@ -837,7 +876,7 @@ export function Ionreach() {
           locked={!isOpen(countryOf(brief.countryId), countryOf(brief.countryId).findIndex((c) => c.id === brief.id))}
           onBack={() => {
             setBrief(null);
-            setPicking(true);
+            setMenuTool("campaign"); setMenuChrome(true);
           }}
           onPlay={(watched) => {
             const list = countryOf(brief.countryId);
@@ -858,9 +897,9 @@ export function Ionreach() {
       {mid && (
         <div className="absolute inset-0 z-30 bg-black">
           <video className="h-full w-full bg-black object-contain" src={`/media/briefings/${mid}.mp4`} autoPlay playsInline onEnded={() => setMidChoice(true)} />
-          <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; setPicking(true); }} className="absolute top-3 left-3 z-30 min-h-11 border border-line bg-bg px-4 font-display">Back to menu</button>
+          <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; setMenuTool("campaign"); setMenuChrome(true); }} className="absolute top-3 left-3 z-30 min-h-11 border border-line bg-bg px-4 font-display">Back to menu</button>
           <div className="absolute inset-x-0 bottom-0 z-30 flex flex-wrap items-center gap-2 border-t border-line bg-bg px-3 py-3">
-            <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; setPicking(true); }} className="min-h-11 border border-line bg-surface px-4 font-display">Back to menu</button>
+            <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; setMenuTool("campaign"); setMenuChrome(true); }} className="min-h-11 border border-line bg-surface px-4 font-display">Back to menu</button>
             <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
             <button type="button" disabled={!midChoice} onClick={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); setMidChoice(false); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
             {!midChoice && <button type="button" onClick={() => setMidChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
@@ -875,7 +914,7 @@ export function Ionreach() {
           onClose={() => {
             setHudson(null);
             setPickingCountry(hudson.countryId);
-            setPicking(true);
+            setMenuTool("campaign"); setMenuChrome(true);
             setPhase("title");
             phaseRef.current = "title";
           }}
@@ -889,47 +928,6 @@ export function Ionreach() {
               : null
           }
         />
-      )}
-
-      {records && (
-        <div className="absolute inset-0 z-40 flex items-end justify-center bg-bg/75 p-4 md:items-center">
-          <div className="max-h-[90%] w-full max-w-lg overflow-y-auto border border-line bg-surface p-5">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="font-display text-3xl">Achievements</h2>
-              <button type="button" onClick={() => setRecords(false)} className="min-h-11 border border-line px-3 font-display">
-                Close
-              </button>
-            </div>
-            <ul className="mt-3 space-y-2">
-              {allBadges().map(({ badge, owned }) => (
-                <li key={badge.id} className={owned ? "border border-gold/50 px-3 py-2" : "border border-line px-3 py-2 opacity-50"}>
-                  <p className="font-display">{badge.name}</p>
-                  <p className="text-xs text-muted">{owned ? "Earned. " : "Locked. "}{badge.detail}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
-      {manual && (
-        <div className="absolute inset-0 z-40 flex items-end justify-center bg-bg/70 p-4 md:items-center">
-          <div className="w-full max-w-lg border border-line bg-surface p-5">
-            <h2 className="font-display text-2xl font-semibold">Field manual</h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted">
-              <li>Drag a box to select many units. On a phone, turn on Box, then drag. Shift-click adds to the selection. Right-click to move or attack. With Box off, dragging pans the map.</li>
-              <li>Q, or A-move, then click is attack-move. H holds position. R repairs a building for ionite. X scraps it for half cost.</li>
-              <li>WASD or arrows pan. Scroll or pinch to zoom. Right-drag pans. Space snaps to the selection. P pauses. Ctrl+1/2/3 stores a group.</li>
-              <li>T3X is your callsign hull. It starts beside the spire and can be rebuilt at the vehicle bay. It can fire on aircraft.</li>
-              <li>Vipers and Lancers are the tank line. Bastions crack buildings. Aegis and Sky Lances swat aircraft. Ridge guns and shard walls hold a lane.</li>
-              <li>A launch spine, after the vehicle bay, builds Kestrel fighters and Condor bombers. They ignore the ridge.</li>
-              <li>Win by destroying the Vesper command spire. Lose yours and the horizon falls.</li>
-            </ul>
-            <button type="button" onClick={() => setManual(false)} className="mt-4 min-h-11 bg-ion px-4 font-display text-bg">
-              Understood
-            </button>
-          </div>
-        </div>
       )}
 
       {tiersOpen && hud && (
@@ -1154,13 +1152,8 @@ export function Ionreach() {
         </div>
       )}
 
-      {!battle && (
-        <button type="button" onClick={toggleMute} className="absolute top-4 right-4 z-10 inline-flex min-h-11 min-w-11 items-center justify-center border border-line bg-surface/80" aria-label={muted ? "Sound on" : "Mute"}>
-          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
-        </button>
-      )}
       <SettingsPanel
-        open={settings}
+        open={settings && battle}
         onClose={() => setSettings(false)}
         onSave={(index) => {
           const sim = simRef.current;
@@ -1202,6 +1195,7 @@ export function Ionreach() {
 }
 
 type Tray = "base" | "men" | "armor" | "air";
+type MenuTool = "campaign" | "multi" | "settings" | "manual" | "records" | "trailer";
 
 const COUNTRY_IDS = ["usa", "russia", "china", "australia", "korea", "japan", "uk", "india", "france", "brazil"];
 
@@ -1233,7 +1227,7 @@ function Flag({ id, className }: { id: string; className?: string }) {
   if (id === "korea") {
     return (
       <span className={box + " relative bg-white"} aria-hidden>
-        <span className="absolute top-1/2 left-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(90deg,#cd2e3a 50%, #0047a0 50%)" }} />
+        <span className="absolute top-1/2 left-1/2 h-[62%] w-[34%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-black/20" style={{ background: "linear-gradient(90deg,#cd2e3a 50%, #0047a0 50%)" }} />
       </span>
     );
   }

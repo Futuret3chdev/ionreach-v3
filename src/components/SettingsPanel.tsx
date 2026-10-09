@@ -12,6 +12,8 @@ export function SettingsPanel({
   onMusic,
   onSave,
   onLoad,
+  dock,
+  initialTab,
 }: {
   open: boolean;
   onClose: () => void;
@@ -19,6 +21,8 @@ export function SettingsPanel({
   onMusic: (on: boolean) => void;
   onSave: (index: number) => SaveSlot | null;
   onLoad: (slot: SaveSlot) => void;
+  dock?: boolean;
+  initialTab?: Tab;
 }) {
   const [tab, setTab] = useState<Tab>("wallet");
   const [profile, setProfile] = useState<Profile>({ marks: 0, owned: [], equipped: [] });
@@ -37,7 +41,8 @@ export function SettingsPanel({
     setPhone(next.phone);
     setProfile(readProfile());
     setSaves(readSaves());
-  }, [open]);
+    if (initialTab) setTab(initialTab);
+  }, [open, initialTab]);
 
   if (!open) return null;
 
@@ -56,8 +61,8 @@ export function SettingsPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-bg/75 p-4 md:items-center">
-      <div className="flex max-h-[90dvh] w-full max-w-lg flex-col border border-line bg-surface">
+    <div className={dock ? "max-h-[38vh] overflow-y-auto border-t border-[#1e3a5f] bg-[#07101c]" : "fixed inset-0 z-50 flex items-end justify-center bg-bg/75 p-4 md:items-center"}>
+      <div className={dock ? "w-full" : "flex max-h-[90dvh] w-full max-w-lg flex-col border border-line bg-surface"}>
         <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
           <div>
             <p className="font-display text-xs tracking-[0.22em] text-ion">DIRECTORATE</p>

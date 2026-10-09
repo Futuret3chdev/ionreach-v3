@@ -2,7 +2,7 @@ import { useState } from "react";
 import { CHAPTERS } from "@/game/campaign";
 import { EXPANSIONS, FORMATS, MONEY_MAX, MONEY_MIN, OPPONENTS, SERVERS, SKIRMISH_MAPS, listRooms, mapById, publishRoom, serverStats, teamsFor, type FormatId, type OpenRoom, type OpponentMode, type SkirmishSetup } from "@/game/skirmish";
 
-export function SkirmishNet({ onClose, onHost }: { onClose: () => void; onHost: (setup: SkirmishSetup) => void }) {
+export function SkirmishNet({ onClose, onHost, dock }: { onClose: () => void; onHost: (setup: SkirmishSetup) => void; dock?: boolean }) {
   const [serverId, setServerId] = useState(SERVERS[0].id);
   const [format, setFormat] = useState<FormatId>("2v2");
   const [opponent, setOpponent] = useState<OpponentMode>("mixed");
@@ -26,7 +26,7 @@ export function SkirmishNet({ onClose, onHost }: { onClose: () => void; onHost: 
   }
 
   return (
-    <div className="absolute inset-0 z-40 overflow-y-auto bg-bg/94 p-4 md:p-8">
+    <div className={dock ? "max-h-[38vh] overflow-y-auto px-2 pb-2" : "absolute inset-0 z-40 overflow-y-auto bg-bg/94 p-4 md:p-8"}>
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-4xl">Multiplayer servers</h2>
