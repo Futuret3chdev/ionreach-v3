@@ -733,17 +733,7 @@ export function Ionreach() {
                   void storyTick;
                   const open = isOpen(list, index);
                   return (
-                    <button
-                      key={chapter.id}
-                      type="button"
-                      disabled={!open}
-                      onClick={() => {
-                        if (!open) return;
-                        setPicking(false);
-                        setBrief(chapter);
-                      }}
-                      className="border border-line bg-surface p-4 text-left disabled:opacity-50"
-                    >
+                    <article key={chapter.id} className="border border-line bg-surface p-4 text-left">
                       <p className="font-display text-xs tracking-[0.16em] text-ion">
                         CHAPTER {chapter.index}
                         {!open && !chapter.video ? " · CUTTING ROOM" : ""}
@@ -751,7 +741,46 @@ export function Ionreach() {
                       </p>
                       <p className="font-display text-2xl">{chapter.theater}</p>
                       <p className="mt-1 text-sm text-muted">{open ? chapter.line : chapter.video ? "Watch the previous film to the end, or win that fight." : "This brief is still being cut."}</p>
-                    </button>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={!chapter.video}
+                          onClick={() => {
+                            if (!chapter.video) return;
+                            setPicking(false);
+                            setBrief(chapter);
+                          }}
+                          className="min-h-11 border border-line px-3 font-display disabled:cursor-not-allowed disabled:text-muted"
+                        >
+                          Watch
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!open || !chapter.video}
+                          onClick={() => {
+                            if (!open || !chapter.video) return;
+                            setPicking(false);
+                            setBrief(chapter);
+                          }}
+                          className="min-h-11 bg-ion px-3 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
+                        >
+                          Play
+                        </button>
+                        <button type="button" onClick={() => setPickingCountry(null)} className="min-h-11 border border-line px-3 font-display">
+                          Go back
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            pendingLoad.current = true;
+                            setSettings(true);
+                          }}
+                          className="min-h-11 border border-line px-3 font-display"
+                        >
+                          Load
+                        </button>
+                      </div>
+                    </article>
                   );
                 })}
               </div>
@@ -770,11 +799,14 @@ export function Ionreach() {
       {brief && (
         <Briefing
           chapter={brief}
+          locked={!isOpen(countryOf(brief.countryId), countryOf(brief.countryId).findIndex((c) => c.id === brief.id))}
           onBack={() => {
             setBrief(null);
             setPicking(true);
           }}
           onPlay={(watched) => {
+            const list = countryOf(brief.countryId);
+            if (!isOpen(list, list.findIndex((c) => c.id === brief.id))) return;
             if (watched) {
               markWatched(brief.id);
               setStoryTick((n) => n + 1);
@@ -793,15 +825,12 @@ export function Ionreach() {
           <video className="min-h-0 w-full flex-1 bg-black object-contain" src={`/media/briefings/${mid}.mp4`} autoPlay playsInline onEnded={() => setMidChoice(true)} />
           <div className="flex items-center justify-between gap-3 border-t border-line bg-bg px-4 py-3">
             <p className="font-display text-sm tracking-[0.16em] text-gold">{midChoice ? "CHOOSE" : "TRANSMISSION · HALFWAY"}</p>
-            {midChoice ? (
-              <div className="flex flex-wrap justify-end gap-2">
-                <button type="button" onClick={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); setMidChoice(false); }} className="min-h-11 bg-ion px-4 font-display text-bg">Play now</button>
-                <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; }} className="min-h-11 border border-line px-3 font-display">Go back</button>
-                <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
-              </div>
-            ) : (
-              <button type="button" onClick={() => setMidChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>
-            )}
+            <div className="flex flex-wrap justify-end gap-2">
+              <button type="button" disabled={!midChoice} onClick={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); setMidChoice(false); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
+              <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; }} className="min-h-11 border border-line px-3 font-display">Go back</button>
+              <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
+              {!midChoice && <button type="button" onClick={() => setMidChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
+            </div>
           </div>
         </div>
       )}
@@ -1045,6 +1074,16 @@ export function Ionreach() {
             <h2 className="font-display text-4xl font-semibold">{phase === "win" ? "Vesper spire is dust." : "The spire fell."}</h2>
             <p className="mt-2 text-muted">{phase === "win" ? `Held in ${clock(hud?.time ?? 0)}. ${hud?.objective ?? chapterById(chapterRef.current).theater}` : "The objective failed. Rebuild and try the map again."}</p>
             {best && phase === "win" && <p className="mt-1 text-sm text-gold">Best {clock(best)}</p>}
+            <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+              <p className="border border-line px-2 py-2">Enemies killed <span className="block font-display text-lg text-fg">{(simRef.current?.downed.men ?? 0) + (simRef.current?.downed.tanks ?? 0) + (simRef.current?.downed.planes ?? 0)}</span></p>
+              <p className="border border-line px-2 py-2">Men lost <span className="block font-display text-lg text-fg">{simRef.current?.lost.men ?? 0}</span></p>
+              <p className="border border-line px-2 py-2">Tanks lost <span className="block font-display text-lg text-fg">{simRef.current?.lost.tanks ?? 0}</span></p>
+              <p className="border border-line px-2 py-2">Aircraft lost <span className="block font-display text-lg text-fg">{simRef.current?.lost.planes ?? 0}</span></p>
+              <p className="border border-line px-2 py-2">Structures built <span className="block font-display text-lg text-fg">{simRef.current?.built ?? 0}</span></p>
+              <p className="border border-line px-2 py-2">Structures lost <span className="block font-display text-lg text-fg">{simRef.current?.lost.structures ?? 0}</span></p>
+              <p className="border border-line px-2 py-2">Enemy structures down <span className="block font-display text-lg text-fg">{simRef.current?.downed.structures ?? 0}</span></p>
+              <p className="border border-line px-2 py-2">Time <span className="block font-display text-lg text-fg">{clock(hud?.time ?? 0)}</span></p>
+            </div>
             {earned.length > 0 && (
               <ul className="mt-3 space-y-1">
                 {earned.map((badge) => (

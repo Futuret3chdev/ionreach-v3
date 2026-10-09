@@ -206,6 +206,8 @@ export class Sim {
   flora: Uint8Array;
   chapterId: string;
   downed = { men: 0, tanks: 0, planes: 0, structures: 0 };
+  lost = { men: 0, tanks: 0, planes: 0, structures: 0 };
+  built = 0;
   block: Uint8Array;
   occ: Int32Array;
   credits: [number, number] = [2100, 1700];
@@ -541,6 +543,7 @@ export class Sim {
         e.buildLeft = 0;
         e.hp = e.maxHp;
         if (e.team === 0) {
+          this.built += 1;
           this.say(onlineLine(e.kind));
           this.events.push({ t: "build" });
         }
@@ -897,20 +900,19 @@ export class Sim {
     }
     this.selected = this.selected.filter((id) => id !== e.id);
     this.uiDirty = true;
-    if (e.team === 1) {
-      if (DEFS[e.kind].air) this.downed.planes += 1;
-      else if (DEFS[e.kind].building) this.downed.structures += 1;
-      else if (
-        e.kind === "rifle" ||
-        e.kind === "rocket" ||
-        e.kind === "watch" ||
-        e.kind === "patrol" ||
-        e.kind === "grenadier" ||
-        e.kind === "sergeant" ||
-        e.kind === "specops"
-      ) this.downed.men += 1;
-      else this.downed.tanks += 1;
-    }
+    const bag = e.team === 1 ? this.downed : this.lost;
+    if (DEFS[e.kind].air) bag.planes += 1;
+    else if (DEFS[e.kind].building) bag.structures += 1;
+    else if (
+      e.kind === "rifle" ||
+      e.kind === "rocket" ||
+      e.kind === "watch" ||
+      e.kind === "patrol" ||
+      e.kind === "grenadier" ||
+      e.kind === "sergeant" ||
+      e.kind === "specops"
+    ) bag.men += 1;
+    else bag.tanks += 1;
     if (e.kind === "spire") {
       const still = this.ents.some((o) => o.alive && o.team === e.team && o.kind === "spire");
       if (!still && this.winner === null) {

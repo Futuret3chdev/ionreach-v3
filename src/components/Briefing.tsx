@@ -3,11 +3,13 @@ import type { Chapter } from "@/game/campaign";
 
 export function Briefing({
   chapter,
+  locked = false,
   onPlay,
   onBack,
   onLoad,
 }: {
   chapter: Chapter;
+  locked?: boolean;
   onPlay: (watched: boolean) => void;
   onBack: () => void;
   onLoad: () => void;
@@ -68,29 +70,28 @@ export function Briefing({
         <p className="mt-2 max-w-2xl text-base text-fg">{choice ? "Film complete. The fight does not start until you choose." : chapter.beats[0]}</p>
       </div>
       <div className="flex items-center justify-between gap-3 border-t border-line bg-bg px-4 py-3">
-        <p className="font-display text-sm tracking-[0.16em] text-gold">{choice ? "CHOOSE" : "STORY CUTSCENE"}</p>
-        {choice ? (
-          <div className="flex flex-wrap justify-end gap-2">
-            <button type="button" onClick={() => onPlay(watched.current)} className="min-h-11 bg-ion px-4 font-display text-bg">
-              Play now
-            </button>
-            <button type="button" onClick={onBack} className="min-h-11 border border-line px-3 font-display">
-              Go back
-            </button>
-            <button type="button" onClick={onLoad} className="min-h-11 border border-line px-3 font-display">
-              Load saved game
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <button type="button" onClick={onBack} className="min-h-11 border border-line px-3 font-display">
-              Go back
-            </button>
-            <button type="button" onClick={() => hold(false)} className="min-h-11 bg-ion px-4 font-display text-bg">
+        <p className="font-display text-sm tracking-[0.16em] text-gold">{locked ? "SEALED" : choice ? "CHOOSE" : "STORY CUTSCENE"}</p>
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            disabled={locked || !choice}
+            onClick={() => onPlay(watched.current)}
+            className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted"
+          >
+            Play now
+          </button>
+          <button type="button" onClick={onBack} className="min-h-11 border border-line px-3 font-display">
+            Go back
+          </button>
+          <button type="button" onClick={onLoad} className="min-h-11 border border-line px-3 font-display">
+            Load saved game
+          </button>
+          {!choice && (
+            <button type="button" onClick={() => hold(false)} className="min-h-11 border border-line px-3 font-display">
               Skip to choice
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
