@@ -97,15 +97,19 @@ export class Renderer {
       ctx.fill();
     } else {
       const [gr, gg, gb] = chapter.ground;
-      const R = gr + n * 36;
-      const G = gg + n * 24;
-      const B = gb + n * 16;
-      ctx.fillStyle = `rgb(${R},${G},${B})`;
+      const R = gr + n * 28;
+      const G = gg + n * 18;
+      const B = gb + n * 12;
+      ctx.fillStyle = `rgb(${R | 0},${G | 0},${B | 0})`;
       ctx.fillRect(x, y, TILE, TILE);
-      if (n > 0.78) {
-        ctx.fillStyle = "rgba(50,32,28,0.4)";
+      ctx.fillStyle = `rgba(255,255,255,${0.03 + n * 0.05})`;
+      ctx.fillRect(x, y, TILE, 2);
+      ctx.fillStyle = `rgba(20,16,12,${0.08 + ((c * 13 + r * 7) % 5) * 0.03})`;
+      ctx.fillRect(x + 3, y + 8, TILE * 0.45, 2);
+      if (n > 0.72) {
+        ctx.fillStyle = "rgba(40,28,18,0.35)";
         ctx.beginPath();
-        ctx.ellipse(x + TILE * 0.62, y + TILE * 0.58, 4.5, 2.8, 0.5, 0, Math.PI * 2);
+        ctx.ellipse(x + TILE * 0.62, y + TILE * 0.58, 5, 2.4, 0.4, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -297,14 +301,21 @@ export class Renderer {
         ctx.ellipse(x + 2, y + 3, tall ? 8 : 6, 3, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = chapter.trunk;
-        ctx.fillRect(x - 1.4, y - (tall ? 14 : 10), 2.8, tall ? 14 : 10);
+        ctx.fillRect(x - 1.6, y - (tall ? 16 : 11), 3.2, tall ? 16 : 11);
+        ctx.fillStyle = "#1a120c";
+        ctx.fillRect(x - 2.2, y - 2, 4.4, 3);
+        const top = y - (tall ? 18 : 13);
+        ctx.fillStyle = "#0e2414";
+        ctx.beginPath();
+        ctx.ellipse(x + 1, top + 4, tall ? 10 : 7, tall ? 7 : 5, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = chapter.canopy;
         ctx.beginPath();
-        ctx.arc(x, y - (tall ? 16 : 12), tall ? 9 : 6.5, 0, Math.PI * 2);
+        ctx.ellipse(x - 1, top, tall ? 9 : 6.2, tall ? 8 : 5.4, -0.2, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "rgba(255,255,255,0.14)";
+        ctx.fillStyle = "rgba(220,255,210,0.22)";
         ctx.beginPath();
-        ctx.arc(x - 2, y - (tall ? 18 : 14), tall ? 3 : 2, 0, Math.PI * 2);
+        ctx.ellipse(x - 3, top - 2, tall ? 3.2 : 2.2, tall ? 2.2 : 1.5, 0, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -491,151 +502,218 @@ export class Renderer {
 
   private drawUnit(ctx: CanvasRenderingContext2D, e: Ent, time: number, team: string): void {
     if (DEFS[e.kind].air) {
-      ctx.rotate(e.facing);
-      const bomb = e.kind === "condor" || e.kind === "spectre";
-      const span = bomb ? 22 : 16;
-      ctx.fillStyle = "#0c141c";
-      ctx.beginPath();
-      ctx.ellipse(0, 0, bomb ? 16 : 13, bomb ? 3.2 : 2.6, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = "#1c2832";
-      ctx.beginPath();
-      ctx.moveTo(4, 0);
-      ctx.lineTo(-2, span);
-      ctx.lineTo(-8, span * 0.45);
-      ctx.lineTo(-2, 0);
-      ctx.lineTo(-8, -span * 0.45);
-      ctx.lineTo(-2, -span);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = "#243240";
-      ctx.beginPath();
-      ctx.moveTo(-10, 0);
-      ctx.lineTo(-16, 5);
-      ctx.lineTo(-16, -5);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = team;
-      ctx.fillRect(2, -1.3, 6, 2.6);
-      ctx.fillStyle = "rgba(186,230,240,0.9)";
-      ctx.beginPath();
-      ctx.ellipse(6, 0, 2.2, 1.3, 0, 0, Math.PI * 2);
-      ctx.fill();
-      if (e.flash > 0) {
-        ctx.fillStyle = "#fff6d2";
-        ctx.beginPath();
-        ctx.arc(14, 0, 3, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      this.drawAir(ctx, e, team);
       return;
     }
     if (e.kind === "rifle" || e.kind === "rocket" || e.kind === "watch" || e.kind === "patrol" || e.kind === "grenadier" || e.kind === "sergeant" || e.kind === "specops") {
-      ctx.rotate(e.facing);
-      const step = Math.sin(time * 11 + e.id) * (e.order === "idle" || e.order === "hold" ? 0.4 : 2.4);
-      const cloth = e.kind === "specops" ? "#1a2228" : e.kind === "sergeant" ? "#243028" : "#3a342c";
-      ctx.strokeStyle = cloth;
-      ctx.lineWidth = 2.2;
-      ctx.beginPath();
-      ctx.moveTo(-1, 1);
-      ctx.lineTo(-3, 6 + step);
-      ctx.moveTo(1, 1);
-      ctx.lineTo(3, 6 - step);
-      ctx.stroke();
-      ctx.fillStyle = cloth;
-      ctx.fillRect(-3.2, -3, 6.4, 7);
-      ctx.fillStyle = e.kind === "specops" ? "#8ea0aa" : "#e4cbb8";
-      ctx.beginPath();
-      ctx.arc(2.2, -1, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = team;
-      ctx.fillRect(-3.4, -4.2, 4.2, 2.2);
-      ctx.strokeStyle = e.kind === "rocket" || e.kind === "grenadier" ? "#c9a27a" : "#b7c2cc";
-      ctx.lineWidth = e.kind === "rocket" ? 2.6 : 1.5;
-      ctx.beginPath();
-      ctx.moveTo(1, 0);
-      ctx.lineTo(e.kind === "rocket" ? 13 : 11, -1);
-      ctx.stroke();
-      if (e.kind === "watch") {
-        ctx.fillStyle = "#d5dee6";
-        ctx.fillRect(3.2, -2.4, 3.5, 1.2);
-      }
-      if (e.kind === "sergeant") {
-        ctx.fillStyle = "#e8c56b";
-        ctx.fillRect(-2.2, -1, 2, 2);
-      }
-      if (e.kind === "patrol") {
-        ctx.fillStyle = "#c4a574";
-        ctx.beginPath();
-        ctx.ellipse(-7, 3, 3.6, 2, 0.3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#1a120c";
-        ctx.beginPath();
-        ctx.arc(-9, 2.4, 0.9, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      if (e.flash > 0) {
-        ctx.fillStyle = "#fff";
-        ctx.beginPath();
-        ctx.arc(12, -1, 2.4, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      this.drawSoldier(ctx, e, time, team);
       return;
     }
+    this.drawVehicle(ctx, e, team);
+  }
+
+  private drawSoldier(ctx: CanvasRenderingContext2D, e: Ent, time: number, team: string): void {
+    ctx.rotate(e.facing);
+    const moving = e.order !== "idle" && e.order !== "hold";
+    const step = Math.sin(time * 10 + e.id) * (moving ? 3.2 : 0.3);
+    const cloth = e.kind === "specops" ? "#1c242c" : e.kind === "sergeant" ? "#2a3428" : "#4a4034";
+    ctx.fillStyle = "#1a140e";
+    ctx.fillRect(-4.2, 5 + step, 2.4, 3.2);
+    ctx.fillRect(1.6, 5 - step, 2.4, 3.2);
+    ctx.strokeStyle = cloth;
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-1.2, 1);
+    ctx.lineTo(-2.6, 6 + step);
+    ctx.moveTo(1.2, 1);
+    ctx.lineTo(2.8, 6 - step);
+    ctx.stroke();
+    const vest = ctx.createLinearGradient(-4, -5, 4, 4);
+    vest.addColorStop(0, "#6a5c4c");
+    vest.addColorStop(1, cloth);
+    ctx.fillStyle = vest;
+    ctx.beginPath();
+    ctx.moveTo(-3.6, -2);
+    ctx.lineTo(3.4, -2.4);
+    ctx.lineTo(3.8, 3.2);
+    ctx.lineTo(-3.2, 3.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = team;
+    ctx.fillRect(-3.2, -1.2, 2.2, 3.4);
+    ctx.fillStyle = "#c9a27a";
+    ctx.fillRect(2.4, -0.4, 1.6, 2.8);
+    const skin = e.kind === "specops" ? "#8ea0aa" : "#e6c2a4";
+    ctx.fillStyle = skin;
+    ctx.beginPath();
+    ctx.ellipse(1.6, -2.2, 2.5, 2.8, 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = e.kind === "specops" ? "#101418" : "#2c241c";
+    ctx.beginPath();
+    ctx.ellipse(1.8, -3.4, 2.7, 1.8, 0.1, Math.PI, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(186,220,230,0.85)";
+    ctx.fillRect(2.2, -2.6, 2.2, 1);
+    ctx.strokeStyle = e.kind === "rocket" || e.kind === "grenadier" ? "#8a6238" : "#9aa6b0";
+    ctx.lineWidth = e.kind === "rocket" ? 2.8 : 1.6;
+    ctx.beginPath();
+    ctx.moveTo(0.4, 0.6);
+    ctx.lineTo(e.kind === "rocket" ? 14 : 12, -1.2);
+    ctx.stroke();
+    ctx.strokeStyle = "#3a342c";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-0.4, 1.2);
+    ctx.lineTo(3.2, 1.6);
+    ctx.stroke();
+    if (e.kind === "watch") {
+      ctx.strokeStyle = "#d5dee6";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(2.6, -2.2, 3.2, 1.4);
+    }
+    if (e.kind === "sergeant") {
+      ctx.fillStyle = "#e8c56b";
+      ctx.fillRect(-1.4, -0.2, 1.6, 1.6);
+    }
+    if (e.kind === "patrol") {
+      ctx.fillStyle = "#6a5038";
+      ctx.beginPath();
+      ctx.ellipse(-6.5, 2.2, 3.4, 2.1, 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (e.flash > 0) {
+      ctx.fillStyle = "#fff6d0";
+      ctx.beginPath();
+      ctx.arc(13, -1.2, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private drawAir(ctx: CanvasRenderingContext2D, e: Ent, team: string): void {
+    ctx.rotate(e.facing);
+    const bomb = e.kind === "condor" || e.kind === "spectre";
+    const span = bomb ? 24 : 18;
+    const body = ctx.createLinearGradient(0, -4, 0, 4);
+    body.addColorStop(0, "#8ea0ae");
+    body.addColorStop(0.45, "#24303a");
+    body.addColorStop(1, "#0c1218");
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, bomb ? 16 : 14, bomb ? 3.4 : 2.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#1a242e";
+    ctx.beginPath();
+    ctx.moveTo(6, 0);
+    ctx.lineTo(-1, span);
+    ctx.lineTo(-7, span * 0.35);
+    ctx.lineTo(-3, 0);
+    ctx.lineTo(-7, -span * 0.35);
+    ctx.lineTo(-1, -span);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(2, 0);
+    ctx.lineTo(-2, span * 0.7);
+    ctx.moveTo(2, 0);
+    ctx.lineTo(-2, -span * 0.7);
+    ctx.stroke();
+    ctx.fillStyle = "#12181e";
+    ctx.beginPath();
+    ctx.moveTo(-8, 0);
+    ctx.lineTo(-16, 5);
+    ctx.lineTo(-15, 0);
+    ctx.lineTo(-16, -5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "rgba(190,230,240,0.9)";
+    ctx.beginPath();
+    ctx.ellipse(7, -0.4, 2.4, 1.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = team;
+    ctx.fillRect(-2, -0.7, 5, 1.4);
+    ctx.fillStyle = "rgba(255,170,90,0.85)";
+    ctx.beginPath();
+    ctx.ellipse(-12, 0, 1.6, 1.1, 0, 0, Math.PI * 2);
+    ctx.fill();
+    if (e.flash > 0) {
+      ctx.fillStyle = "#fff6d2";
+      ctx.beginPath();
+      ctx.arc(15, 0, 2.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private drawVehicle(ctx: CanvasRenderingContext2D, e: Ent, team: string): void {
     ctx.rotate(e.facing);
     const ace = e.kind === "t3x";
     const heavy = e.kind === "bastion" || ace || e.kind === "howl";
     const hv = e.kind === "harvester";
-    const len = hv ? 26 : ace ? 52 : e.kind === "reaver" ? 40 : heavy ? 44 : e.kind === "viper" ? 36 : 40;
+    const len = hv ? 28 : ace ? 54 : e.kind === "reaver" ? 42 : heavy ? 46 : e.kind === "viper" ? 36 : 40;
     const wid = hv ? 16 : ace ? 26 : heavy ? 24 : e.kind === "viper" ? 20 : 22;
-    ctx.fillStyle = "#0e1218";
-    ctx.fillRect(-len / 2, -wid / 2 - 1.5, len, 4);
-    ctx.fillRect(-len / 2, wid / 2 - 2.5, len, 4);
+    ctx.fillStyle = "#07090c";
+    ctx.fillRect(-len / 2, -wid / 2 - 2, len, 4.5);
+    ctx.fillRect(-len / 2, wid / 2 - 2.5, len, 4.5);
     ctx.fillStyle = "#2a3138";
-    for (let i = -len / 2 + 2; i < len / 2; i += 5) {
-      ctx.fillRect(i, -wid / 2 - 1, 2, 3);
-      ctx.fillRect(i, wid / 2 - 2, 2, 3);
+    for (let i = -len / 2 + 3; i < len / 2 - 2; i += 6) {
+      ctx.beginPath();
+      ctx.arc(i, -wid / 2 - 0.2, 1.7, 0, Math.PI * 2);
+      ctx.arc(i, wid / 2 + 0.2, 1.7, 0, Math.PI * 2);
+      ctx.fill();
     }
-    ctx.fillStyle = "#1a212a";
+    const hull = ctx.createLinearGradient(0, -wid / 2, 0, wid / 2);
+    hull.addColorStop(0, "#3d4854");
+    hull.addColorStop(0.45, "#1c242e");
+    hull.addColorStop(1, "#0e141a");
+    ctx.fillStyle = hull;
     ctx.beginPath();
-    ctx.moveTo(-len / 2 + 4, -wid / 2 + 2);
-    ctx.lineTo(len / 2 - 8, -wid / 2 + 3);
-    ctx.lineTo(len / 2, 0);
-    ctx.lineTo(len / 2 - 8, wid / 2 - 3);
-    ctx.lineTo(-len / 2 + 4, wid / 2 - 2);
+    ctx.moveTo(-len / 2 + 2, -wid / 2 + 3);
+    ctx.lineTo(len / 2 - 10, -wid / 2 + 4);
+    ctx.lineTo(len / 2 - 1, -wid * 0.15);
+    ctx.lineTo(len / 2 - 1, wid * 0.15);
+    ctx.lineTo(len / 2 - 10, wid / 2 - 4);
+    ctx.lineTo(-len / 2 + 2, wid / 2 - 3);
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = team;
-    ctx.fillRect(-4, -wid / 2 + 3, len * 0.35, 2);
+    ctx.fillRect(-len * 0.15, -wid / 2 + 5, len * 0.28, 2);
     if (hv) {
       const fill = DEFS.harvester.cargo ? e.cargo / DEFS.harvester.cargo : 0;
-      ctx.fillStyle = "rgba(62,224,197,0.85)";
-      ctx.fillRect(-6, -5, 12 * fill, 10);
-      ctx.strokeStyle = "#9fb0be";
-      ctx.strokeRect(-6, -5, 12, 10);
+      ctx.fillStyle = "#12181c";
+      ctx.fillRect(-8, -6, 16, 12);
+      ctx.fillStyle = "rgba(62,224,197,0.9)";
+      ctx.fillRect(-7, -5, 14 * fill, 10);
     } else {
       ctx.save();
       ctx.rotate(e.aim - e.facing);
-      ctx.fillStyle = "#12181e";
+      const turret = ctx.createRadialGradient(-1, -1, 1, 0, 0, heavy ? 8 : 6);
+      turret.addColorStop(0, "#6a7682");
+      turret.addColorStop(1, "#12181e");
+      ctx.fillStyle = turret;
       ctx.beginPath();
       ctx.arc(0, 0, heavy ? 7.5 : 6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#c5d0da";
-      ctx.fillRect(1, heavy ? -2.1 : -1.5, heavy ? 18 : 14, heavy ? 4.2 : 3);
+      ctx.fillStyle = "#d5dee6";
+      ctx.fillRect(2, heavy ? -1.7 : -1.3, heavy ? 18 : 14, heavy ? 3.4 : 2.6);
+      ctx.fillStyle = "#1a120c";
+      ctx.fillRect(heavy ? 18 : 14, -0.8, 2.2, 1.6);
       if (e.kind === "aegis") {
         ctx.fillStyle = team;
-        ctx.fillRect(2, -7, 9, 2);
-        ctx.fillRect(2, 5, 9, 2);
+        ctx.fillRect(3, -7, 10, 1.6);
+        ctx.fillRect(3, 5.4, 10, 1.6);
       }
       if (e.flash > 0) {
         ctx.fillStyle = "#fff4d2";
         ctx.beginPath();
-        ctx.arc(heavy ? 20 : 15, 0, 3.4, 0, Math.PI * 2);
+        ctx.arc(heavy ? 21 : 16, 0, 3, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
       if (ace) {
         ctx.fillStyle = "#e8c56b";
-        ctx.fillRect(-len / 2 + 6, -1.2, len - 16, 2.4);
+        ctx.fillRect(-len / 2 + 6, -1.2, len - 18, 2.4);
       }
       this.paintCallsign(ctx, e);
     }
@@ -680,7 +758,7 @@ export class Renderer {
   }
 
   private isMarkedTank(kind: Kind): boolean {
-    return kind === "viper" || kind === "lancer" || kind === "bastion" || kind === "t3x" || kind === "aegis";
+    return kind === "t3x";
   }
 
   private stampCallsigns(ctx: CanvasRenderingContext2D, sim: Sim, cam: Cam, viewW: number, viewH: number): void {

@@ -1377,6 +1377,26 @@ export class Sim {
     this.uiDirty = true;
   }
 
+  selectSame(kind: Kind): void {
+    this.selected = this.ents.filter((e) => e.alive && e.team === 0 && e.kind === kind).map((e) => e.id);
+    this.uiDirty = true;
+    this.say(this.selected.length ? `${this.selected.length} ${DEFS[kind].name}` : "None of that kind.");
+  }
+
+  selectClass(which: "men" | "tanks" | "air" | "all"): void {
+    const men = new Set<Kind>(["rifle", "rocket", "watch", "patrol", "grenadier", "sergeant", "specops"]);
+    const ids: number[] = [];
+    for (const e of this.ents) {
+      if (!e.alive || e.team !== 0 || DEFS[e.kind].building) continue;
+      const air = !!DEFS[e.kind].air;
+      const man = men.has(e.kind);
+      if (which === "all" || (which === "air" && air) || (which === "men" && man) || (which === "tanks" && !air && !man)) ids.push(e.id);
+    }
+    this.selected = ids;
+    this.uiDirty = true;
+    this.say(ids.length ? `${ids.length} selected.` : "None in that group.");
+  }
+
   command(x: number, y: number, mode: "smart" | "amove"): void {
     const ownUnits = this.selected
       .map((id) => this.byId(id))

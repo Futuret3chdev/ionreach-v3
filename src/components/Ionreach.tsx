@@ -135,6 +135,9 @@ export function Ionreach() {
   const [mid, setMid] = useState<string | null>(null);
   const [hudson, setHudson] = useState<Chapter | null>(null);
   const midPlayed = useRef(false);
+  const pickModeRef = useRef(false);
+  const lastPick = useRef({ id: 0, at: 0 });
+  const [pickMode, setPickMode] = useState(false);
   const [records, setRecords] = useState(false);
   const [skirmish, setSkirmish] = useState(false);
   const [trailerChoice, setTrailerChoice] = useState(false);
@@ -243,7 +246,7 @@ export function Ionreach() {
         ghost = { kind: sim.placeKind, x: spot.x, y: spot.y, ok: sim.canPlace(0, sim.placeKind, spot.x, spot.y) && sim.credits[0] >= DEFS[sim.placeKind].cost };
       }
       const box =
-        pr.drag && pr.button === 0 && !pr.touch
+        pr.drag && pr.button === 0 && (!pr.touch || pickModeRef.current)
           ? {
               x0: pr.wx,
               y0: pr.wy,
@@ -335,7 +338,7 @@ export function Ionreach() {
       const dx = p.x - pointer.current.sx;
       const dy = p.y - pointer.current.sy;
       if (Math.hypot(dx, dy) > 8) pointer.current.drag = true;
-      if (pointer.current.drag && (pointer.current.touch || pointer.current.button === 2)) {
+      if (pointer.current.drag && (pointer.current.button === 2 || (pointer.current.touch && !pickModeRef.current))) {
         camRef.current.x -= (p.x - pointer.current.sx) / camRef.current.z;
         camRef.current.y -= (p.y - pointer.current.sy) / camRef.current.z;
         pointer.current.sx = p.x;
@@ -362,7 +365,12 @@ export function Ionreach() {
         return;
       }
       if (button !== 0) return;
-      if (touch && dragged) return;
+      if (touch && dragged && !pickModeRef.current) return;
+      if (touch && dragged && pickModeRef.current) {
+        simNow.selectBox(pointer.current.wx, pointer.current.wy, world.x, world.y, e.shiftKey);
+        setHud(simNow.snapshot());
+        return;
+      }
       if (simNow.placeKind && !dragged) {
         simNow.placeAt(world.x, world.y);
         return;
@@ -382,10 +390,29 @@ export function Ionreach() {
           const u = simNow.byId(id);
           return !!u && u.team === 0 && !DEFS[u.kind].building;
         });
-        if (hit && hit.team === 0) simNow.selectAt(world.x, world.y, false);
+        const now = performance.now();
+        if (hit && hit.team === 0 && lastPick.current.id === hit.id && now - lastPick.current.at < 420) {
+          simNow.selectSame(hit.kind);
+          lastPick.current = { id: 0, at: 0 };
+          setHud(simNow.snapshot());
+          return;
+        }
+        lastPick.current = { id: hit?.id ?? 0, at: now };
+        if (hit && hit.team === 0) simNow.selectAt(world.x, world.y, pickModeRef.current);
         else if (own) simNow.command(world.x, world.y, "smart");
         else simNow.selectAt(world.x, world.y, false);
         return;
+      }
+      if (!dragged) {
+        const hit = simNow.pickAt(world.x, world.y);
+        const now = performance.now();
+        if (hit && hit.team === 0 && lastPick.current.id === hit.id && now - lastPick.current.at < 420) {
+          simNow.selectSame(hit.kind);
+          lastPick.current = { id: 0, at: 0 };
+          setHud(simNow.snapshot());
+          return;
+        }
+        lastPick.current = { id: hit?.id ?? 0, at: now };
       }
       if (dragged) simNow.selectBox(pointer.current.wx, pointer.current.wy, world.x, world.y, e.shiftKey);
       else simNow.selectAt(world.x, world.y, e.shiftKey);
@@ -880,7 +907,7 @@ export function Ionreach() {
           <div className="w-full max-w-lg border border-line bg-surface p-5">
             <h2 className="font-display text-2xl font-semibold">Field manual</h2>
             <ul className="mt-3 space-y-2 text-sm text-muted">
-              <li>Drag a box or tap to select. Right-click to move or attack. On a phone, tap a unit, then tap the ground. Drag to pan.</li>
+              <li>Drag a box to select many units. Shift-click adds to the selection. Double-click one soldier, tank, or plane to take every unit of that kind. Men, Tanks, Air, and All grab a whole group. On a phone, turn on Box, then drag. Right-click to move or attack.</li>
               <li>Q, or A-move, then click is attack-move. H holds position. R repairs a building for ionite. X scraps it for half cost.</li>
               <li>WASD or arrows pan. Scroll or pinch to zoom. Right-drag pans. Space snaps to the selection. P pauses. Ctrl+1/2/3 stores a group.</li>
               <li>T3X is your callsign hull. It starts beside the spire and can be rebuilt at the vehicle bay. It can fire on aircraft.</li>
@@ -1012,6 +1039,31 @@ export function Ionreach() {
                 onPointerDown={onMini}
                 className="pointer-events-auto h-24 w-32 border border-line bg-bg md:h-32 md:w-44"
               />
+              <div className="pointer-events-auto flex max-w-[46%] flex-wrap gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    pickModeRef.current = !pickModeRef.current;
+                    setPickMode(pickModeRef.current);
+                  }}
+                  className={"min-h-11 border px-2 font-display " + (pickMode ? "border-ion bg-ion text-bg" : "border-line bg-surface")}
+                >
+                  Box
+                </button>
+                {(["men", "tanks", "air", "all"] as const).map((which) => (
+                  <button
+                    key={which}
+                    type="button"
+                    onClick={() => {
+                      simRef.current?.selectClass(which);
+                      setHud(simRef.current?.snapshot() ?? null);
+                    }}
+                    className="min-h-11 border border-line bg-surface px-2 font-display capitalize"
+                  >
+                    {which === "men" ? "Men" : which === "tanks" ? "Tanks" : which === "air" ? "Air" : "All"}
+                  </button>
+                ))}
+              </div>
               <SelectionCard hud={hud} onStop={() => simRef.current?.stop()} onRepair={() => simRef.current?.toggleRepair()} onSell={() => simRef.current?.sell()} onUpgrade={(wing) => simRef.current?.upgradeWing(0, wing)} onAmove={() => {
                 const sim = simRef.current;
                 if (!sim) return;
