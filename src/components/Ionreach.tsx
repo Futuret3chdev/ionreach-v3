@@ -6,6 +6,9 @@ import {
   Factory,
   Hexagon,
   Pause,
+  Maximize2,
+  Minimize2,
+  EyeOff,
   Rocket,
   Shield,
   Square,
@@ -138,6 +141,9 @@ export function Ionreach() {
   const lastPick = useRef({ id: 0, at: 0 });
   const [pickMode, setPickMode] = useState(false);
   const [tray, setTray] = useState<Tray>("base");
+  const [chrome, setChrome] = useState(true);
+  const [full, setFull] = useState(false);
+  const [tools, setTools] = useState({ command: true, select: true, map: false, powers: false });
   const [records, setRecords] = useState(false);
   const [skirmish, setSkirmish] = useState(false);
   const [trailerChoice, setTrailerChoice] = useState(false);
@@ -167,6 +173,12 @@ export function Ionreach() {
       v.muted = true;
       void v.play().catch(() => undefined);
     }
+  }, []);
+
+  useEffect(() => {
+    const onFull = () => setFull(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFull);
+    return () => document.removeEventListener("fullscreenchange", onFull);
   }, []);
 
   useEffect(() => {
@@ -632,6 +644,12 @@ export function Ionreach() {
     if (!reduce && phaseRef.current === "title") void v.play().catch(() => undefined);
   }
 
+  function toggleFull() {
+    const root = document.documentElement;
+    if (!document.fullscreenElement) void root.requestFullscreen?.().catch(() => undefined);
+    else void document.exitFullscreen?.().catch(() => undefined);
+  }
+
   function toggleMute() {
     const v = vidRef.current;
     if (!v) return;
@@ -732,13 +750,10 @@ export function Ionreach() {
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
                 {COUNTRY_IDS.map((id) => {
                   const chapters = countryOf(id);
-                  const plate = PLATES[id];
                   return (
-                    <button key={id} type="button" onClick={() => setPickingCountry(id)} className="group overflow-hidden border border-[#8ea0b0]/50 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
-                      <span className="flex h-28 items-center justify-center" style={{ background: `linear-gradient(160deg, ${plate.from}, ${plate.to})` }}>
-                        <Crest d={plate.d} />
-                      </span>
-                      <span className="block bg-black/80 px-2 py-2">
+                    <button key={id} type="button" onClick={() => setPickingCountry(id)} className="overflow-hidden border border-line bg-surface text-left">
+                      <Flag id={id} />
+                      <span className="block px-2 py-2">
                         <span className="block font-display text-base leading-tight">{chapters[0]?.country}</span>
                         <span className="block text-[11px] text-muted">{chapters.length} chapters</span>
                       </span>
@@ -951,142 +966,141 @@ export function Ionreach() {
       )}
 
       {battle && (
-        <>
-          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
-          <div className="pointer-events-none absolute inset-0 flex flex-col">
-            <header className="flex items-start justify-between gap-2 p-3">
-              <div className="pointer-events-auto flex items-center gap-2 bg-bg/40 px-2 py-1.5 backdrop-blur-sm">
-                <img src="/brand/futuret3ch.png?v=2" alt="" className="h-10 w-10 object-contain" />
-                <div>
-                  <p className="font-display text-[10px] leading-none tracking-[0.2em] text-muted">SUPPORTED BY</p>
-                  <p className="mt-1 font-display text-sm leading-none font-bold tracking-[0.14em] text-fg">FUTURET3CH</p>
-                  <p className="mt-1 font-display text-xs tracking-[0.14em] text-ion">{chapterById(chapterRef.current).country}</p>
-                  <p className="mt-1 font-display text-xl leading-none">{clock(hud?.time ?? 0)}</p>
-                </div>
-              </div>
-              <div className="pointer-events-none max-w-sm text-center">
-                {hud?.objective && <p className="border border-ion/60 bg-bg/80 px-3 py-2 font-display text-sm text-ion">{hud.objective}</p>}
-                {hud?.message && <p className="border border-line bg-bg/80 px-3 py-2 font-display text-lg text-fg">{hud.message}</p>}
-                {hud?.low && <p className="mt-2 bg-ember px-3 py-1 font-display text-bg">Grid starved</p>}
-                {hud?.attackArm && <p className="mt-2 bg-ion px-3 py-1 font-display text-bg">Attack-move — choose ground</p>}
-                {hud?.abilityArm === "strike" && <p className="mt-2 bg-gold px-3 py-1 font-display text-bg">Ion strike — choose the ground</p>}
-                {hud?.abilityArm === "nuke" && <p className="mt-2 bg-ember px-3 py-1 font-display text-bg">DEFCON — choose the ground</p>}
-                {hud?.paused && <p className="mt-2 bg-gold px-3 py-1 font-display text-bg">Paused</p>}
-                {toasts[0] && <p className="mt-2 border border-gold bg-bg/90 px-3 py-1 font-display text-gold">Achievement · {toasts[0].name}</p>}
-              </div>
-              <div className="pointer-events-auto flex flex-col items-end gap-2">
-                <button type="button" onClick={() => setSettings(true)} className="min-h-11 border border-line bg-surface/90 px-3 font-display text-sm">Settings</button>
-              <div className="border border-line bg-surface/90 px-3 py-2 text-right">
-                <p className="font-display text-2xl leading-none text-gold">{hud?.credits ?? 0}</p>
-                <p className="text-xs text-muted">cap {hud?.cap ?? 0}</p>
-                <p className={hud?.low ? "font-display text-ember" : "font-display text-ion"}>
-                  <Zap className="mr-1 inline size-3" />
-                  {hud?.prod ?? 0}/{hud?.use ?? 0}
+        <div className="absolute inset-0 flex flex-col bg-bg">
+          <header className={(chrome ? "flex " : "hidden ") + "h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[#1e3a5f] bg-[#07101c] px-2"}>
+              <Flag id={chapterById(chapterRef.current).countryId} className="h-6 w-9 shrink-0" />
+              <div className="min-w-0">
+                <p className="truncate font-display text-xs leading-tight">
+                  {chapterById(chapterRef.current).country} · {clock(hud?.time ?? 0)}
                 </p>
-                <button type="button" onClick={() => setTiersOpen(true)} className="mt-2 min-h-9 w-full border border-line px-2 font-display text-xs">
-                  Tier map
-                </button>
-                <button type="button" onClick={() => setAbilitiesOpen((open) => !open)} className="mt-1 min-h-9 w-full border border-line px-2 font-display text-xs">
-                  {abilitiesOpen ? "Close abilities" : "Abilities"}
-                </button>
-                {abilitiesOpen && (
-                  <div className="mt-2 grid gap-1 text-left">
-                    <button type="button" onClick={() => { simRef.current?.armAbility("strike"); setHud(simRef.current?.snapshot() ?? null); }} className="min-h-8 border border-line px-2 font-display text-[11px]">
-                      Ion strike {hud && hud.ability.strike > 0 ? `${Math.ceil(hud.ability.strike)}s` : "400"}
-                    </button>
-                    <button type="button" onClick={() => { simRef.current?.armAbility("dome"); setHud(simRef.current?.snapshot() ?? null); }} className="min-h-8 border border-line px-2 font-display text-[11px]">
-                      Shield dome {hud && hud.ability.dome > 0 ? `${Math.ceil(hud.ability.dome)}s` : "500"}
-                    </button>
-                    <button type="button" onClick={() => { simRef.current?.armAbility("nuke"); setHud(simRef.current?.snapshot() ?? null); }} className="min-h-8 border border-line px-2 font-display text-[11px] text-ember">
-                      DEFCON {hud && hud.ability.nuke > 0 ? `${Math.ceil(hud.ability.nuke)}s` : "1400"}
-                    </button>
-                  </div>
-                )}
+                <p className="truncate text-[11px] text-ion">{hud?.objective || hud?.message || "Hold the horizon"}</p>
               </div>
-              </div>
+              <p className="ml-auto font-display text-sm text-gold">{hud?.credits ?? 0}</p>
+              <p className={hud?.low ? "font-display text-xs text-ember" : "font-display text-xs text-ion"}>{hud?.prod ?? 0}/{hud?.use ?? 0}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  pickModeRef.current = !pickModeRef.current;
+                  setPickMode(pickModeRef.current);
+                }}
+                aria-pressed={pickMode}
+                className={"min-h-9 border px-2 font-display text-xs " + (pickMode ? "border-ion bg-ion text-bg" : "border-line")}
+              >
+                Select
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  pauseRef.current = !pauseRef.current;
+                  if (simRef.current) {
+                    simRef.current.paused = pauseRef.current;
+                    setHud(simRef.current.snapshot());
+                  }
+                }}
+                className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line"
+                aria-label="Pause"
+              >
+                <Pause className="size-4" />
+              </button>
+              <button type="button" onClick={() => setSettings(true)} className="min-h-9 border border-line px-2 font-display text-xs">
+                Settings
+              </button>
+              <button type="button" onClick={toggleFull} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Full screen">
+                {full ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}
+              </button>
+              {phase === "battle" && flyover && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    modeRef.current = "play";
+                    const p = simRef.current?.pois;
+                    if (p) {
+                      camRef.current.x = p.player.x + 160;
+                      camRef.current.y = p.player.y - 160;
+                      camRef.current.z = 0.92;
+                    }
+                    setFlyover(false);
+                  }}
+                  className="min-h-9 border border-line px-2 font-display text-xs"
+                >
+                  Skip
+                </button>
+              )}
+              <button type="button" onClick={() => setChrome(false)} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Hide panels">
+                <EyeOff className="size-4" />
+              </button>
             </header>
-
-            <div className="flex min-h-0 flex-1">
-              <div className="flex-1" />
-              <aside className="pointer-events-auto m-2 hidden w-[280px] shrink-0 md:block">
-                <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} />
-              </aside>
-            </div>
-
-            {flyover && phase === "battle" && (
-              <div className="pointer-events-none px-4 pb-2 text-center">
-                <p className="font-display text-2xl text-fg md:text-3xl">{introLine}</p>
+          <div className="relative min-h-0 flex-1">
+            <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
+            <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center px-3">
+              <div className="flex flex-col items-center gap-1">
+                {hud?.low && <p className="bg-ember px-3 py-1 font-display text-bg">Grid starved</p>}
+                {hud?.attackArm && <p className="bg-ion px-3 py-1 font-display text-bg">Attack-move — choose ground</p>}
+                {hud?.abilityArm === "strike" && <p className="bg-gold px-3 py-1 font-display text-bg">Ion strike — choose the ground</p>}
+                {hud?.abilityArm === "nuke" && <p className="bg-ember px-3 py-1 font-display text-bg">DEFCON — choose the ground</p>}
+                {hud?.paused && <p className="bg-gold px-3 py-1 font-display text-bg">Paused</p>}
+                {flyover && phase === "battle" && <p className="font-display text-xl text-fg">{introLine}</p>}
+                {toasts[0] && <p className="border border-gold bg-bg/90 px-3 py-1 font-display text-gold">Achievement · {toasts[0].name}</p>}
               </div>
+            </div>
+            {!chrome && (
+              <button type="button" onClick={() => setChrome(true)} className="absolute top-2 right-2 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
+                Show panels
+              </button>
             )}
-
-            <footer className="flex items-end gap-2 p-3">
+          </div>
+          <footer className={(chrome ? "" : "hidden ") + "shrink-0 border-t border-[#1e3a5f] bg-[#07101c]"}>
+              <div className="flex gap-1 overflow-x-auto px-2 py-1">
+                {(
+                  [
+                    ["command", "Command"],
+                    ["select", "Selection"],
+                    ["map", "Map"],
+                    ["powers", "Powers"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setTools((cur) => ({ ...cur, [key]: !cur[key] }))}
+                    className={"min-h-9 shrink-0 border px-2 font-display text-xs " + (tools[key] ? "border-ion bg-[#12343a] text-ion" : "border-line text-muted")}
+                  >
+                    {tools[key] ? "Hide " : "Show "}
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {tools.command && <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} />}
               <canvas
                 ref={miniRef}
                 width={180}
                 height={120}
                 onPointerDown={onMini}
-                className="pointer-events-auto h-24 w-32 border border-line bg-bg md:h-32 md:w-44"
+                className={tools.map ? "m-2 h-24 w-32 border border-line bg-bg" : "pointer-events-none absolute h-0 w-0 opacity-0"}
               />
-              <div className="pointer-events-auto">
-                <button
-                  type="button"
-                  onClick={() => {
-                    pickModeRef.current = !pickModeRef.current;
-                    setPickMode(pickModeRef.current);
-                  }}
-                  className={"min-h-11 border px-3 font-display " + (pickMode ? "border-ion bg-ion text-bg" : "border-line bg-surface")}
-                  aria-pressed={pickMode}
-                >
-                  Box
-                </button>
-              </div>
-              <SelectionCard hud={hud} onStop={() => simRef.current?.stop()} onRepair={() => simRef.current?.toggleRepair()} onSell={() => simRef.current?.sell()} onUpgrade={(wing) => simRef.current?.upgradeWing(0, wing)} onAmove={() => {
-                const sim = simRef.current;
-                if (!sim) return;
-                sim.attackArm = !sim.attackArm;
-                sim.uiDirty = true;
-                setHud(sim.snapshot());
-              }} />
-              <div className="pointer-events-auto ml-auto flex gap-2">
-                {phase === "battle" && flyover && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      modeRef.current = "play";
-                      const p = simRef.current?.pois;
-                      if (p) {
-                        camRef.current.x = p.player.x + 160;
-                        camRef.current.y = p.player.y - 160;
-                        camRef.current.z = 0.92;
-                      }
-                      setFlyover(false);
-                    }}
-                    className="min-h-11 border border-line bg-surface px-3 font-display"
-                  >
-                    Skip
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => {
-                    pauseRef.current = !pauseRef.current;
-                    if (simRef.current) {
-                      simRef.current.paused = pauseRef.current;
-                      setHud(simRef.current.snapshot());
-                    }
-                  }}
-                  className="inline-flex min-h-11 min-w-11 items-center justify-center border border-line bg-surface"
-                  aria-label="Pause"
-                >
-                  <Pause className="size-4" />
-                </button>
-              </div>
+              {(tools.select || tools.powers) && (
+                <div className="flex items-stretch gap-2 px-2 pb-2">
+                  {tools.select && (
+                    <SelectionCard hud={hud} onStop={() => simRef.current?.stop()} onRepair={() => simRef.current?.toggleRepair()} onSell={() => simRef.current?.sell()} onUpgrade={(wing) => simRef.current?.upgradeWing(0, wing)} onAmove={() => {
+                      const sim = simRef.current;
+                      if (!sim) return;
+                      sim.attackArm = !sim.attackArm;
+                      sim.uiDirty = true;
+                      setHud(sim.snapshot());
+                    }} />
+                  )}
+                  {tools.powers && (
+                    <div className="grid shrink-0 content-start gap-1">
+                      <button type="button" onClick={() => setTiersOpen(true)} className="min-h-8 border border-line px-2 font-display text-[11px]">Tier map</button>
+                      <button type="button" onClick={() => { simRef.current?.armAbility("strike"); setHud(simRef.current?.snapshot() ?? null); }} className="min-h-8 border border-line px-2 font-display text-[11px]">Ion strike {hud && hud.ability.strike > 0 ? `${Math.ceil(hud.ability.strike)}s` : "400"}</button>
+                      <button type="button" onClick={() => { simRef.current?.armAbility("dome"); setHud(simRef.current?.snapshot() ?? null); }} className="min-h-8 border border-line px-2 font-display text-[11px]">Shield {hud && hud.ability.dome > 0 ? `${Math.ceil(hud.ability.dome)}s` : "500"}</button>
+                      <button type="button" onClick={() => { simRef.current?.armAbility("nuke"); setHud(simRef.current?.snapshot() ?? null); }} className="min-h-8 border border-line px-2 font-display text-[11px] text-ember">DEFCON {hud && hud.ability.nuke > 0 ? `${Math.ceil(hud.ability.nuke)}s` : "1400"}</button>
+                    </div>
+                  )}
+                </div>
+              )}
             </footer>
-            <div className="pointer-events-auto px-2 pb-2 md:hidden">
-              <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} compact />
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
       {(phase === "win" || phase === "lose") && (
@@ -1182,7 +1196,7 @@ export function Ionreach() {
           else sfx.current.stopScore();
         }}
       />
-      <img src="/brand/t3x-coin.png" alt="T3x" className="pointer-events-none absolute right-3 bottom-36 z-40 h-16 w-16 object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.65)] md:right-4 md:bottom-40 md:h-20 md:w-20" />
+      {!battle && <img src="/brand/t3x-coin.png" alt="T3x" className="pointer-events-none absolute right-3 bottom-6 z-40 h-16 w-16 object-contain drop-shadow-[0_6px_16px_rgba(0,0,0,0.65)] md:right-4 md:h-20 md:w-20" />}
     </main>
   );
 }
@@ -1191,18 +1205,64 @@ type Tray = "base" | "men" | "armor" | "air";
 
 const COUNTRY_IDS = ["usa", "russia", "china", "australia", "korea", "japan", "uk", "india", "france", "brazil"];
 
-const PLATES: Record<string, { from: string; to: string; d: string }> = {
-  usa: { from: "#24507a", to: "#0c1c30", d: "M32 6 L46 22 H38 L42 54 H22 L26 22 H18 Z" },
-  russia: { from: "#7a2430", to: "#2a1014", d: "M16 18 H48 V28 H40 V50 H24 V28 H16 Z" },
-  china: { from: "#8a1e28", to: "#2c1014", d: "M32 8 L50 32 L32 56 L14 32 Z" },
-  australia: { from: "#8a5a22", to: "#2a1c0c", d: "M12 40 Q32 8 52 40 Q32 28 12 40 Z" },
-  korea: { from: "#1e4a78", to: "#101820", d: "M32 8 A16 16 0 1 0 32 40 A10 10 0 1 1 32 20 Z" },
-  japan: { from: "#6a2048", to: "#1c1018", d: "M10 42 Q32 10 54 42 L32 34 Z" },
-  uk: { from: "#1a3a62", to: "#10141c", d: "M18 46 L32 12 L46 46 H18 Z M26 46 L32 28 L38 46 Z" },
-  india: { from: "#1a6848", to: "#102018", d: "M32 10 L50 48 H14 Z" },
-  france: { from: "#24386a", to: "#141820", d: "M14 16 H50 V24 H38 V50 H26 V24 H14 Z" },
-  brazil: { from: "#1a6830", to: "#102014", d: "M32 8 L54 32 L32 56 L10 32 Z M32 20 L44 32 L32 44 L20 32 Z" },
-};
+function Flag({ id, className }: { id: string; className?: string }) {
+  const box = className ?? "block h-16 w-full";
+  if (id === "usa") {
+    return (
+      <span className={box + " relative overflow-hidden"} style={{ background: "repeating-linear-gradient(#bf0a30 0 7.7%, #fff 7.7% 15.4%)" }} aria-hidden>
+        <span className="absolute top-0 left-0 h-[54%] w-[40%] bg-[#002868]" />
+      </span>
+    );
+  }
+  if (id === "russia") return <span className={box} style={{ background: "linear-gradient(#fff 0 33%, #0039a6 33% 66%, #d52b1e 66%)" }} aria-hidden />;
+  if (id === "china") {
+    return (
+      <span className={box + " relative bg-[#de2910]"} aria-hidden>
+        <span className="absolute top-[18%] left-[18%] text-[10px] text-[#ffde00]">★</span>
+      </span>
+    );
+  }
+  if (id === "australia") {
+    return (
+      <span className={box + " relative bg-[#012169]"} aria-hidden>
+        <span className="absolute top-0 left-0 h-1/2 w-[42%]" style={{ background: "linear-gradient(90deg,#012169,#c8102e 40%,#fff 40% 60%,#c8102e 60%,#012169)" }} />
+        <span className="absolute right-[18%] bottom-[22%] size-1.5 rounded-full bg-white" />
+      </span>
+    );
+  }
+  if (id === "korea") {
+    return (
+      <span className={box + " relative bg-white"} aria-hidden>
+        <span className="absolute top-1/2 left-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: "linear-gradient(90deg,#cd2e3a 50%, #0047a0 50%)" }} />
+      </span>
+    );
+  }
+  if (id === "japan") {
+    return (
+      <span className={box + " relative bg-white"} aria-hidden>
+        <span className="absolute top-1/2 left-1/2 size-6 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#bc002d]" />
+      </span>
+    );
+  }
+  if (id === "uk") {
+    return (
+      <span className={box + " relative overflow-hidden bg-[#012169]"} aria-hidden>
+        <span className="absolute inset-x-0 top-1/2 h-[18%] -translate-y-1/2 bg-white" />
+        <span className="absolute inset-y-0 left-1/2 w-[18%] -translate-x-1/2 bg-white" />
+        <span className="absolute inset-x-0 top-1/2 h-[8%] -translate-y-1/2 bg-[#c8102e]" />
+        <span className="absolute inset-y-0 left-1/2 w-[8%] -translate-x-1/2 bg-[#c8102e]" />
+      </span>
+    );
+  }
+  if (id === "india") return <span className={box} style={{ background: "linear-gradient(#ff9933 0 33%, #fff 33% 66%, #138808 66%)" }} aria-hidden />;
+  if (id === "france") return <span className={box} style={{ background: "linear-gradient(90deg,#0055a4 0 33%, #fff 33% 66%, #ef4135 66%)" }} aria-hidden />;
+  return (
+    <span className={box + " relative bg-[#009c3b]"} aria-hidden>
+      <span className="absolute top-1/2 left-1/2 h-[55%] w-[46%] -translate-x-1/2 -translate-y-1/2 rotate-45 bg-[#ffdf00]" />
+      <span className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#002776]" />
+    </span>
+  );
+}
 
 const TRAYS: { id: Tray; label: string; kinds: Kind[] }[] = [
   { id: "base", label: "Base", kinds: BUILD_MENU },
@@ -1211,18 +1271,57 @@ const TRAYS: { id: Tray; label: string; kinds: Kind[] }[] = [
   { id: "air", label: "Air", kinds: ["kestrel", "condor", "ionwing", "spectre"] },
 ];
 
-const SCENES: Partial<Record<Kind, string>> = {
-  relay: "linear-gradient(160deg,#3a4a38,#1a2418 60%,#6a8a50)",
-  refinery: "linear-gradient(180deg,#5a5048,#2a241c 55%,#8a7a58)",
-  barracks: "linear-gradient(180deg,#4a4038,#243028)",
-  bay: "linear-gradient(180deg,#3a342c,#1c1814)",
-  strip: "linear-gradient(180deg,#6a8aaa,#3a4a38 70%)",
-  turret: "linear-gradient(180deg,#6a6458,#2a2824)",
-  sam: "linear-gradient(180deg,#4a5a48,#1c241c)",
-  cannon: "linear-gradient(180deg,#5a4030,#1c1814)",
-  wall: "linear-gradient(180deg,#6a5a40,#2a241c)",
-  silo: "linear-gradient(180deg,#3a5a40,#142018)",
-};
+function Mark({ kind }: { kind: Kind }) {
+  const hull = kind === "t3x" ? "#c6a15a" : kind === "bastion" ? "#8a5a3a" : kind === "howl" ? "#6a7048" : kind === "aegis" ? "#3a6a78" : kind === "reaver" ? "#4a5560" : "#5c6770";
+  if (kind === "kestrel" || kind === "condor" || kind === "ionwing" || kind === "spectre") {
+    const wide = kind === "condor" || kind === "spectre";
+    const fill = kind === "ionwing" ? "#3ee0c5" : kind === "spectre" ? "#1a1e24" : kind === "condor" ? "#6a5438" : "#d5dee6";
+    return (
+      <svg viewBox="0 0 64 32" className="h-8 w-12" aria-hidden>
+        <path d={wide ? "M4 16 H60 L48 22 H16 Z" : "M6 16 H58 L46 12 H18 Z"} fill={fill} />
+        <path d={kind === "ionwing" ? "M32 6 L52 16 L32 26 L12 16 Z" : kind === "spectre" ? "M8 10 H40 L28 16 L40 22 H8 Z" : "M20 16 L32 4 L44 16 L32 28 Z"} fill={fill} opacity="0.85" />
+      </svg>
+    );
+  }
+  if (kind === "viper" || kind === "lancer" || kind === "reaver" || kind === "howl" || kind === "aegis" || kind === "bastion" || kind === "t3x" || kind === "harvester") {
+    const len = kind === "viper" ? 34 : kind === "bastion" || kind === "t3x" ? 52 : 44;
+    return (
+      <svg viewBox="0 0 64 32" className="h-8 w-12" aria-hidden>
+        <rect x={(64 - len) / 2} y="12" width={len} height="10" rx="1" fill={hull} />
+        <rect x="8" y="10" width={len > 40 ? 48 : 28} height="3" fill="#1a1e24" />
+        <rect x="8" y="21" width={len > 40 ? 48 : 28} height="3" fill="#1a1e24" />
+        {kind !== "harvester" && <rect x="30" y="8" width={kind === "aegis" ? 8 : 14} height="4" fill="#d5dee6" />}
+        {kind === "howl" && <rect x="40" y="6" width="6" height="10" fill="#e8c56b" />}
+        {kind === "harvester" && <rect x="24" y="13" width="14" height="8" fill="#3ee0c5" />}
+      </svg>
+    );
+  }
+  if (DEFS[kind].building) {
+    return (
+      <svg viewBox="0 0 64 32" className="h-8 w-12" aria-hidden>
+        {kind === "wall" ? <rect x="6" y="14" width="52" height="8" fill="#8a7358" /> : null}
+        {kind === "relay" ? <path d="M32 4 L36 28 H28 Z M20 28 H44" stroke="#d5dee6" fill="#3ee0c5" /> : null}
+        {kind === "refinery" ? <path d="M8 26 V14 H22 V8 H28 V14 H56 V26 Z" fill="#8a7a58" /> : null}
+        {kind === "barracks" ? <path d="M10 26 V12 H28 V8 H36 V12 H54 V26 Z" fill="#5a6a48" /> : null}
+        {kind === "bay" ? <path d="M8 26 V10 H56 V26 H40 V16 H24 V26 Z" fill="#4a4038" /> : null}
+        {kind === "strip" ? <path d="M4 18 H60 M18 12 H46 L40 22 H24 Z" stroke="#d5dee6" fill="#6a8aaa" /> : null}
+        {kind === "turret" ? <path d="M20 24 H44 L40 16 H36 L48 8 H52 L34 16 H24 Z" fill="#6a6458" /> : null}
+        {kind === "sam" ? <path d="M16 26 H48 L40 16 H36 L46 6 H50 L34 16 H24 Z" fill="#3a6a48" /> : null}
+        {kind === "cannon" ? <path d="M14 22 H50 L46 14 H40 L58 10 H62 L38 14 H22 Z" fill="#5a4030" /> : null}
+        {kind === "silo" ? <ellipse cx="32" cy="20" rx="12" ry="8" fill="#3a5a40" /> : null}
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 64 32" className="h-8 w-12" aria-hidden>
+      <circle cx={kind === "rocket" ? 40 : 34} cy="12" r="4" fill={kind === "specops" ? "#8ea0aa" : "#e6c2a4"} />
+      <path d="M28 16 H40 L38 26 H30 Z" fill={kind === "sergeant" ? "#2a3428" : kind === "specops" ? "#1c242c" : "#4a4034"} />
+      <path d={kind === "rocket" ? "M40 14 H56" : kind === "grenadier" ? "M40 18 L52 10" : "M40 16 H54"} stroke="#d5dee6" strokeWidth="2" />
+      {kind === "patrol" && <ellipse cx="20" cy="22" rx="5" ry="3" fill="#6a5038" />}
+      {kind === "watch" && <rect x="38" y="10" width="6" height="2" fill="#d5dee6" />}
+    </svg>
+  );
+}
 
 function MenuPlate({ children, onClick }: { children: string; onClick: () => void }) {
   return (
@@ -1236,26 +1335,16 @@ function MenuPlate({ children, onClick }: { children: string; onClick: () => voi
   );
 }
 
-function Crest({ d }: { d: string }) {
-  return (
-    <svg viewBox="0 0 64 64" className="h-16 w-16 drop-shadow-[0_4px_8px_rgba(0,0,0,0.55)]" aria-hidden>
-      <path d={d} fill="none" stroke="#f4f7fa" strokeWidth="3" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 function CommandMenu({
   tray,
   onTray,
   hud,
   onPick,
-  compact,
 }: {
   tray: Tray;
   onTray: (tray: Tray) => void;
   hud: HudSnap | null;
   onPick: (kind: Kind) => void;
-  compact?: boolean;
 }) {
   const kinds = TRAYS.find((row) => row.id === tray)?.kinds ?? [];
   return (
@@ -1277,7 +1366,7 @@ function CommandMenu({
           </button>
         ))}
       </div>
-      <div className={"grid grid-cols-3 gap-1 " + (compact ? "max-h-36 overflow-y-auto" : "max-h-[58vh] overflow-y-auto")}>
+      <div className="flex gap-1 overflow-x-auto">
         {kinds.map((kind) => (
           <Cameo key={kind} kind={kind} hud={hud} onClick={() => onPick(kind)} />
         ))}
@@ -1288,12 +1377,10 @@ function CommandMenu({
 
 function Cameo({ kind, hud, onClick }: { kind: Kind; hud: HudSnap | null; onClick: () => void }) {
   const def = DEFS[kind];
-  const Icon = ICONS[kind];
   const on = hud?.unlocked[kind] ?? false;
   const afford = hud?.afford[kind] ?? false;
   const active = hud?.place === kind;
   const pct = hud?.making[kind];
-  const scene = SCENES[kind] ?? (def.air ? "linear-gradient(180deg,#7aa0c0,#3a4a38 72%)" : def.building ? "linear-gradient(180deg,#5a5044,#242018)" : "linear-gradient(180deg,#4a5644,#1c2418)");
   return (
     <button
       type="button"
@@ -1301,16 +1388,16 @@ function Cameo({ kind, hud, onClick }: { kind: Kind; hud: HudSnap | null; onClic
       onClick={onClick}
       title={`${def.name} — ${def.cost} ionite. ${def.blurb}`}
       className={
-        "relative aspect-[5/4] overflow-hidden border text-left " +
-        (active ? "border-ion " : "border-[#6a5648] ") +
-        (on && afford ? "" : "opacity-45 ")
+        "relative flex w-[76px] shrink-0 flex-col border bg-[#121820] text-left " +
+        (active ? "border-ion " : "border-[#3a4654] ") +
+        (on && afford ? "" : "opacity-40 ")
       }
     >
-      <span className="absolute inset-0" style={{ background: scene }} />
-      <span className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent" />
-      <Icon className="absolute top-[30%] left-1/2 size-6 -translate-x-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" />
-      <span className="absolute inset-x-0 bottom-0 bg-black/75 px-0.5 py-0.5 text-center font-display text-[10px] leading-tight text-white">{def.name}</span>
-      <span className="absolute top-0.5 right-0.5 font-display text-[9px] text-gold">{def.cost}</span>
+      <span className="flex h-12 items-center justify-center bg-[#1a2430]">
+        <Mark kind={kind} />
+      </span>
+      <span className="truncate px-1 pt-0.5 font-display text-[10px] leading-tight">{def.name}</span>
+      <span className="px-1 pb-0.5 font-display text-[10px] text-gold">{def.cost}</span>
       {pct !== undefined && <span className="absolute bottom-0 left-0 h-0.5 bg-ion" style={{ width: `${Math.round(pct * 100)}%` }} />}
     </button>
   );
