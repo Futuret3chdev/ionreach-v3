@@ -141,7 +141,7 @@ export function Ionreach() {
   const lastPick = useRef({ id: 0, at: 0 });
   const [pickMode, setPickMode] = useState(false);
   const [tray, setTray] = useState<Tray>("base");
-  const [chrome, setChrome] = useState(false);
+  const [chrome, setChrome] = useState(true);
   const [menuChrome, setMenuChrome] = useState(true);
   const [menuTool, setMenuTool] = useState<MenuTool | null>(null);
   const [settingsTab, setSettingsTab] = useState<"wallet" | "saves">("wallet");
@@ -790,7 +790,6 @@ export function Ionreach() {
                     ["settings", "Settings"],
                     ["manual", "Manual"],
                     ["records", "Achievements"],
-                    ["trailer", "Trailer"],
                   ] as const
                 ).map(([id, label]) => (
                   <button
@@ -815,6 +814,7 @@ export function Ionreach() {
                 >
                   Load
                 </button>
+                <p className="pt-2 text-center text-xs text-muted">Hide the menu to watch the trailer behind it.</p>
               </nav>
             ) : (
               <button type="button" onClick={() => setMenuTool(null)} className="m-3 min-h-11 self-start border border-line px-3 font-display">
@@ -905,7 +905,8 @@ export function Ionreach() {
             )}
             {menuTool === "manual" && (
               <ul className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 pb-3 text-sm text-muted">
-                <li>The top bar and this dock can be hidden. Show panels brings them back.</li>
+                <li>Hide this menu to watch the trailer behind it. Menu brings the list back.</li>
+                <li>In a fight, the top bar and the bottom dock hide together. Show panels brings them back.</li>
                 <li>Select on the battle bar draws a box. Shift-click adds. Drag pans when Select is off.</li>
                 <li>Show or hide Command, Selection, Map, and Powers under the map.</li>
                 <li>Q or A-move, then click, is attack-move. H holds. R repairs. X scraps a building.</li>
@@ -921,9 +922,6 @@ export function Ionreach() {
                   </li>
                 ))}
               </ul>
-            )}
-            {menuTool === "trailer" && (
-              <p className="px-3 pb-3 text-sm text-muted">The film is behind this menu. Hide the menu to watch it. Full screen covers the browser, including on iPhone.</p>
             )}
           </div>
         </div>
@@ -1036,26 +1034,8 @@ export function Ionreach() {
       )}
 
       {battle && (
-        <div className="absolute inset-0 bg-bg">
-          <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
-          <div className="pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center px-3">
-            <div className="flex flex-col items-center gap-1">
-              {hud?.low && <p className="bg-ember px-3 py-1 font-display text-bg">Grid starved</p>}
-              {hud?.attackArm && <p className="bg-ion px-3 py-1 font-display text-bg">Attack-move — choose ground</p>}
-              {hud?.abilityArm === "strike" && <p className="bg-gold px-3 py-1 font-display text-bg">Ion strike — choose the ground</p>}
-              {hud?.abilityArm === "nuke" && <p className="bg-ember px-3 py-1 font-display text-bg">DEFCON — choose the ground</p>}
-              {hud?.paused && <p className="bg-gold px-3 py-1 font-display text-bg">Paused</p>}
-              {flyover && phase === "battle" && <p className="font-display text-xl text-fg">{introLine}</p>}
-              {toasts[0] && <p className="border border-gold bg-bg/90 px-3 py-1 font-display text-gold">Achievement · {toasts[0].name}</p>}
-            </div>
-          </div>
-          {!chrome && (
-            <button type="button" onClick={() => setChrome(true)} className="absolute top-3 right-3 z-20 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
-              Menu
-            </button>
-          )}
-          <div className={(chrome ? "flex " : "hidden ") + "absolute inset-0 z-10 flex-col bg-[#07101c]/95"}>
-          <header className="flex h-12 shrink-0 items-center gap-2 overflow-x-auto px-2">
+        <div className="absolute inset-0 flex flex-col bg-bg">
+          <header className={(chrome ? "flex " : "hidden ") + "h-12 shrink-0 items-center gap-2 overflow-x-auto border-b border-[#1e3a5f] bg-[#07101c] px-2"}>
               <Flag id={chapterById(chapterRef.current).countryId} className="h-6 w-9 shrink-0" />
               <div className="min-w-0">
                 <p className="truncate font-display text-xs leading-tight">
@@ -1114,11 +1094,30 @@ export function Ionreach() {
                   Skip
                 </button>
               )}
-              <button type="button" onClick={() => setChrome(false)} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Hide menu">
+              <button type="button" onClick={() => setChrome(false)} className="inline-flex min-h-9 min-w-9 items-center justify-center border border-line" aria-label="Hide panels">
                 <EyeOff className="size-4" />
               </button>
             </header>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="relative min-h-0 flex-1">
+            <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
+            <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center px-3">
+              <div className="flex flex-col items-center gap-1">
+                {hud?.low && <p className="bg-ember px-3 py-1 font-display text-bg">Grid starved</p>}
+                {hud?.attackArm && <p className="bg-ion px-3 py-1 font-display text-bg">Attack-move — choose ground</p>}
+                {hud?.abilityArm === "strike" && <p className="bg-gold px-3 py-1 font-display text-bg">Ion strike — choose the ground</p>}
+                {hud?.abilityArm === "nuke" && <p className="bg-ember px-3 py-1 font-display text-bg">DEFCON — choose the ground</p>}
+                {hud?.paused && <p className="bg-gold px-3 py-1 font-display text-bg">Paused</p>}
+                {flyover && phase === "battle" && <p className="font-display text-xl text-fg">{introLine}</p>}
+                {toasts[0] && <p className="border border-gold bg-bg/90 px-3 py-1 font-display text-gold">Achievement · {toasts[0].name}</p>}
+              </div>
+            </div>
+            {!chrome && (
+              <button type="button" onClick={() => setChrome(true)} className="absolute top-2 right-2 min-h-11 border border-ion bg-bg/90 px-3 font-display text-ion">
+                Show panels
+              </button>
+            )}
+          </div>
+          <footer className={(chrome ? "" : "hidden ") + "shrink-0 border-t border-[#1e3a5f] bg-[#07101c]"}>
               <div className="flex gap-1 overflow-x-auto px-2 py-1">
                 {(
                   [
@@ -1140,11 +1139,7 @@ export function Ionreach() {
                   </button>
                 ))}
               </div>
-              {tools.command && (
-                <div className="min-h-0 flex-1 overflow-y-auto">
-                  <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} />
-                </div>
-              )}
+              {tools.command && <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} />}
               {tools.match && (
                 <div className="flex flex-wrap gap-2 px-2 pb-2">
                   <button type="button" onClick={exitMatch} className="min-h-9 border border-line px-3 font-display text-xs">Exit</button>
@@ -1187,8 +1182,7 @@ export function Ionreach() {
                   )}
                 </div>
               )}
-            </div>
-          </div>
+            </footer>
         </div>
       )}
 
@@ -1286,7 +1280,7 @@ export function Ionreach() {
 }
 
 type Tray = "base" | "men" | "armor" | "air";
-type MenuTool = "campaign" | "multi" | "settings" | "manual" | "records" | "trailer";
+type MenuTool = "campaign" | "multi" | "settings" | "manual" | "records";
 
 const COUNTRY_IDS = ["usa", "russia", "china", "australia", "korea", "japan", "uk", "india", "france", "brazil"];
 
