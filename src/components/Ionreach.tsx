@@ -777,7 +777,7 @@ export function Ionreach() {
       />
       {!battle && <div className="absolute inset-0 bg-bg/45" />}
       {!battle && !menuChrome && (
-        <div className="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-20 flex items-center gap-2">
+        <div className="open-screen absolute top-[max(0.75rem,env(safe-area-inset-top))] right-3 z-20 flex items-center gap-2">
           <button type="button" onClick={toggleMute} className="inline-flex min-h-11 min-w-11 items-center justify-center border border-line bg-bg/90" aria-label={muted ? "Sound on" : "Mute"}>
             {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
           </button>
@@ -790,7 +790,7 @@ export function Ionreach() {
         </div>
       )}
       {!battle && menuChrome && (
-        <div className="absolute inset-0 z-10 flex flex-col bg-[#07101c]/95">
+        <div className="open-menu absolute inset-0 z-10 flex flex-col bg-[#07101c]/95">
           <header className="flex h-12 shrink-0 items-center gap-2 overflow-x-auto px-3">
             <div className="min-w-0">
               <p className="truncate font-display text-sm leading-tight">IONREACH</p>

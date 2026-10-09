@@ -51,7 +51,16 @@
     width: 100%;
     height: var(--app-h, 100dvh) !important;
     min-height: 0;
-    padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (orientation: portrait) {
+  html.ios-full .open-screen {
+    top: 5.75rem;
+  }
+
+  html.ios-full .open-menu {
+    padding-top: 5.75rem;
   }
 }
