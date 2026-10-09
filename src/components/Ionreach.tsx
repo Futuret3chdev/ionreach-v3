@@ -6,7 +6,6 @@ import {
   Factory,
   Hexagon,
   Pause,
-  Play,
   Rocket,
   Shield,
   Square,
@@ -22,7 +21,7 @@ import {
   Zap,
   Plane,
 } from "lucide-react";
-import { BUILD_MENU, DEFS, TIER_MAP, UNIT_MENU, WORLD_H, WORLD_W, nextUpgradeCost, structureTitle, type Kind, type TechWing } from "@/game/content";
+import { BUILD_MENU, DEFS, TIER_MAP, WORLD_H, WORLD_W, nextUpgradeCost, structureTitle, type Kind, type TechWing } from "@/game/content";
 import { Sfx } from "@/game/audio";
 import { Renderer, type Cam } from "@/game/render";
 import { Sim, type HudSnap } from "@/game/sim";
@@ -138,6 +137,7 @@ export function Ionreach() {
   const pickModeRef = useRef(false);
   const lastPick = useRef({ id: 0, at: 0 });
   const [pickMode, setPickMode] = useState(false);
+  const [tray, setTray] = useState<Tray>("base");
   const [records, setRecords] = useState(false);
   const [skirmish, setSkirmish] = useState(false);
   const [trailerChoice, setTrailerChoice] = useState(false);
@@ -669,35 +669,27 @@ export function Ionreach() {
       />
       {!battle && <div className="absolute inset-0 bg-bg/45" />}
       {!battle && (
-        <div className="relative z-10 flex h-full flex-col justify-end px-5 py-6 md:px-12 md:py-10">
-          <p className="font-display text-sm tracking-[0.28em] text-ion">VERSION 3 · HELION DIRECTORATE · T3X</p>
-          <h1 className="font-display text-6xl leading-none font-bold text-fg md:text-8xl">IONREACH</h1>
-          <p className="mt-2 max-w-xl text-base text-muted md:text-lg">
-            Ten countries. Each one is its own chapter chain. Watch the brief to the end, or win the fight, before the next one opens.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" onClick={() => setPicking(true)} className="min-h-11 bg-ion px-5 font-display text-lg font-semibold text-bg">
-              Choose a chapter
-            </button>
-            <button type="button" onClick={() => setSkirmish(true)} className="min-h-11 border border-ion bg-surface/80 px-5 font-display text-lg text-ion">
-              Multiplayer servers
-            </button>
-            <button type="button" onClick={() => setSettings(true)} className="min-h-11 border border-line bg-surface/80 px-5 font-display text-lg text-fg">Settings</button>
-            <button type="button" onClick={() => openCinema(0)} className="inline-flex min-h-11 items-center gap-2 border border-line bg-surface/80 px-5 font-display text-lg text-fg">
-              <Play className="size-4" />
-              Play trailer
-            </button>
-            <button type="button" onClick={() => setManual(true)} className="min-h-11 px-4 font-display text-lg text-muted">
-              Field manual
-            </button>
-            <button type="button" onClick={() => setRecords(true)} className="min-h-11 px-4 font-display text-lg text-muted">
-              Achievements
-            </button>
+        <div className="relative z-10 flex h-full items-start justify-end p-4 md:p-10">
+          <div className="flex w-full max-w-xs flex-col items-stretch gap-3">
+            <div className="border border-[#8ea0b0]/70 bg-black/55 px-4 py-3 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm">
+              <p className="font-display text-[11px] tracking-[0.42em] text-ion">HELION DIRECTORATE</p>
+              <h1 className="font-display text-5xl leading-none font-bold md:text-6xl">IONREACH</h1>
+              <p className="font-display text-sm tracking-[0.28em] text-fg/80">GLASS HORIZON</p>
+            </div>
+            <nav className="flex flex-col gap-2">
+              <MenuPlate onClick={() => setPicking(true)}>Campaign</MenuPlate>
+              <MenuPlate onClick={() => setSkirmish(true)}>Multiplayer</MenuPlate>
+              <MenuPlate onClick={() => { pendingLoad.current = true; setSettings(true); }}>Load</MenuPlate>
+              <MenuPlate onClick={() => setSettings(true)}>Settings</MenuPlate>
+              <MenuPlate onClick={() => openCinema(0)}>Trailer</MenuPlate>
+              <MenuPlate onClick={() => setManual(true)}>Field manual</MenuPlate>
+              <MenuPlate onClick={() => setRecords(true)}>Achievements</MenuPlate>
+            </nav>
+            <p className="text-right text-[11px] text-muted">
+              Original battle sim. Not affiliated with any classic strategy publisher.
+              {best ? ` Fastest hold: ${clock(best)}.` : ""}
+            </p>
           </div>
-          <p className="mt-6 max-w-lg text-xs text-muted">
-            Supported by Futuret3ch. Original battle sim. Not affiliated with any classic strategy publisher.
-            {best ? ` Fastest hold: ${clock(best)}.` : ""}
-          </p>
         </div>
       )}
 
@@ -715,7 +707,7 @@ export function Ionreach() {
       )}
 
       {picking && (
-        <div className="absolute inset-0 z-40 overflow-y-auto bg-bg/92 p-4 md:p-8">
+        <div className="absolute inset-0 z-40 overflow-y-auto bg-bg p-4 md:p-8">
           <div className="mx-auto max-w-5xl">
             <div className="flex items-center justify-between gap-3">
               <div>
@@ -737,16 +729,19 @@ export function Ionreach() {
               A chapter stays sealed until you watch the previous film to the end, or you win that fight. Skipping the film does not open the next one. Major Hudson checks in between fights. Some battles cut to a transmission when the relief column arrives.
             </p>
             {!pickingCountry && (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {["usa", "russia", "china", "australia", "korea", "japan", "uk", "india", "france", "brazil"].map((id) => {
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                {COUNTRY_IDS.map((id) => {
                   const chapters = countryOf(id);
-                  const filmed = chapters.filter((c) => c.video).length;
+                  const plate = PLATES[id];
                   return (
-                    <button key={id} type="button" onClick={() => setPickingCountry(id)} className="border border-line bg-surface p-4 text-left">
-                      <p className="font-display text-2xl">{chapters[0]?.country}</p>
-                      <p className="mt-1 text-sm text-muted">
-                        {chapters.length} chapters · {filmed} filmed
-                      </p>
+                    <button key={id} type="button" onClick={() => setPickingCountry(id)} className="group overflow-hidden border border-[#8ea0b0]/50 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]">
+                      <span className="flex h-28 items-center justify-center" style={{ background: `linear-gradient(160deg, ${plate.from}, ${plate.to})` }}>
+                        <Crest d={plate.d} />
+                      </span>
+                      <span className="block bg-black/80 px-2 py-2">
+                        <span className="block font-display text-base leading-tight">{chapters[0]?.country}</span>
+                        <span className="block text-[11px] text-muted">{chapters.length} chapters</span>
+                      </span>
                     </button>
                   );
                 })}
@@ -1013,15 +1008,8 @@ export function Ionreach() {
 
             <div className="flex min-h-0 flex-1">
               <div className="flex-1" />
-              <aside className="pointer-events-auto m-3 hidden w-56 flex-col gap-2 overflow-y-auto border border-line bg-surface/90 p-2 md:flex">
-                <p className="px-1 font-display text-xs tracking-[0.18em] text-muted">RAISE</p>
-                {BUILD_MENU.map((k) => (
-                  <BuildButton key={k} kind={k} hud={hud} onClick={() => simRef.current?.armPlace(k)} />
-                ))}
-                <p className="px-1 pt-2 font-display text-xs tracking-[0.18em] text-muted">TRAIN</p>
-                {UNIT_MENU.map((k) => (
-                  <BuildButton key={k} kind={k} hud={hud} onClick={() => simRef.current?.armPlace(k)} />
-                ))}
+              <aside className="pointer-events-auto m-2 hidden w-[280px] shrink-0 md:block">
+                <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} />
               </aside>
             </div>
 
@@ -1094,10 +1082,8 @@ export function Ionreach() {
                 </button>
               </div>
             </footer>
-            <div className="pointer-events-auto flex gap-2 overflow-x-auto px-3 pb-3 md:hidden">
-              {[...BUILD_MENU, ...UNIT_MENU].map((k) => (
-                <BuildButton key={k} kind={k} hud={hud} compact onClick={() => simRef.current?.armPlace(k)} />
-              ))}
+            <div className="pointer-events-auto px-2 pb-2 md:hidden">
+              <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} compact />
             </div>
           </div>
         </>
@@ -1201,13 +1187,113 @@ export function Ionreach() {
   );
 }
 
-function BuildButton({ kind, hud, onClick, compact }: { kind: Kind; hud: HudSnap | null; onClick: () => void; compact?: boolean }) {
+type Tray = "base" | "men" | "armor" | "air";
+
+const COUNTRY_IDS = ["usa", "russia", "china", "australia", "korea", "japan", "uk", "india", "france", "brazil"];
+
+const PLATES: Record<string, { from: string; to: string; d: string }> = {
+  usa: { from: "#24507a", to: "#0c1c30", d: "M32 6 L46 22 H38 L42 54 H22 L26 22 H18 Z" },
+  russia: { from: "#7a2430", to: "#2a1014", d: "M16 18 H48 V28 H40 V50 H24 V28 H16 Z" },
+  china: { from: "#8a1e28", to: "#2c1014", d: "M32 8 L50 32 L32 56 L14 32 Z" },
+  australia: { from: "#8a5a22", to: "#2a1c0c", d: "M12 40 Q32 8 52 40 Q32 28 12 40 Z" },
+  korea: { from: "#1e4a78", to: "#101820", d: "M32 8 A16 16 0 1 0 32 40 A10 10 0 1 1 32 20 Z" },
+  japan: { from: "#6a2048", to: "#1c1018", d: "M10 42 Q32 10 54 42 L32 34 Z" },
+  uk: { from: "#1a3a62", to: "#10141c", d: "M18 46 L32 12 L46 46 H18 Z M26 46 L32 28 L38 46 Z" },
+  india: { from: "#1a6848", to: "#102018", d: "M32 10 L50 48 H14 Z" },
+  france: { from: "#24386a", to: "#141820", d: "M14 16 H50 V24 H38 V50 H26 V24 H14 Z" },
+  brazil: { from: "#1a6830", to: "#102014", d: "M32 8 L54 32 L32 56 L10 32 Z M32 20 L44 32 L32 44 L20 32 Z" },
+};
+
+const TRAYS: { id: Tray; label: string; kinds: Kind[] }[] = [
+  { id: "base", label: "Base", kinds: BUILD_MENU },
+  { id: "men", label: "Men", kinds: ["rifle", "watch", "patrol", "grenadier", "sergeant", "specops", "rocket"] },
+  { id: "armor", label: "Armor", kinds: ["harvester", "viper", "lancer", "reaver", "howl", "aegis", "bastion", "t3x"] },
+  { id: "air", label: "Air", kinds: ["kestrel", "condor", "ionwing", "spectre"] },
+];
+
+const SCENES: Partial<Record<Kind, string>> = {
+  relay: "linear-gradient(160deg,#3a4a38,#1a2418 60%,#6a8a50)",
+  refinery: "linear-gradient(180deg,#5a5048,#2a241c 55%,#8a7a58)",
+  barracks: "linear-gradient(180deg,#4a4038,#243028)",
+  bay: "linear-gradient(180deg,#3a342c,#1c1814)",
+  strip: "linear-gradient(180deg,#6a8aaa,#3a4a38 70%)",
+  turret: "linear-gradient(180deg,#6a6458,#2a2824)",
+  sam: "linear-gradient(180deg,#4a5a48,#1c241c)",
+  cannon: "linear-gradient(180deg,#5a4030,#1c1814)",
+  wall: "linear-gradient(180deg,#6a5a40,#2a241c)",
+  silo: "linear-gradient(180deg,#3a5a40,#142018)",
+};
+
+function MenuPlate({ children, onClick }: { children: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="min-h-12 border border-[#9aabba] bg-gradient-to-b from-[#3a4654] to-[#141a22] px-4 font-display text-lg tracking-[0.22em] text-fg uppercase shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_2px_0_#07090c] hover:border-ion hover:text-ion"
+    >
+      {children}
+    </button>
+  );
+}
+
+function Crest({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 64 64" className="h-16 w-16 drop-shadow-[0_4px_8px_rgba(0,0,0,0.55)]" aria-hidden>
+      <path d={d} fill="none" stroke="#f4f7fa" strokeWidth="3" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CommandMenu({
+  tray,
+  onTray,
+  hud,
+  onPick,
+  compact,
+}: {
+  tray: Tray;
+  onTray: (tray: Tray) => void;
+  hud: HudSnap | null;
+  onPick: (kind: Kind) => void;
+  compact?: boolean;
+}) {
+  const kinds = TRAYS.find((row) => row.id === tray)?.kinds ?? [];
+  return (
+    <div className="border border-[#8b98a6] bg-[#12161c]/95 p-1.5 shadow-[inset_0_0_0_1px_#2a313a,0_8px_24px_rgba(0,0,0,0.45)]">
+      <div className="mb-1.5 grid grid-cols-4 gap-1">
+        {TRAYS.map((row) => (
+          <button
+            key={row.id}
+            type="button"
+            onClick={() => onTray(row.id)}
+            className={
+              "min-h-9 border font-display text-[10px] tracking-[0.14em] uppercase " +
+              (tray === row.id
+                ? "border-ion bg-[#1e3a34] text-ion shadow-[inset_0_0_12px_rgba(62,224,197,0.25)]"
+                : "border-[#5c6874] bg-gradient-to-b from-[#2c3540] to-[#161b22] text-fg")
+            }
+          >
+            {row.label}
+          </button>
+        ))}
+      </div>
+      <div className={"grid grid-cols-3 gap-1 " + (compact ? "max-h-36 overflow-y-auto" : "max-h-[58vh] overflow-y-auto")}>
+        {kinds.map((kind) => (
+          <Cameo key={kind} kind={kind} hud={hud} onClick={() => onPick(kind)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Cameo({ kind, hud, onClick }: { kind: Kind; hud: HudSnap | null; onClick: () => void }) {
   const def = DEFS[kind];
   const Icon = ICONS[kind];
   const on = hud?.unlocked[kind] ?? false;
   const afford = hud?.afford[kind] ?? false;
   const active = hud?.place === kind;
   const pct = hud?.making[kind];
+  const scene = SCENES[kind] ?? (def.air ? "linear-gradient(180deg,#7aa0c0,#3a4a38 72%)" : def.building ? "linear-gradient(180deg,#5a5044,#242018)" : "linear-gradient(180deg,#4a5644,#1c2418)");
   return (
     <button
       type="button"
@@ -1215,21 +1301,16 @@ function BuildButton({ kind, hud, onClick, compact }: { kind: Kind; hud: HudSnap
       onClick={onClick}
       title={`${def.name} — ${def.cost} ionite. ${def.blurb}`}
       className={
-        "relative flex min-h-11 items-center gap-2 border px-2 text-left " +
-        (active ? "border-ion bg-surface-2 text-fg " : "border-line bg-bg/40 text-fg ") +
-        (on && afford ? "" : "opacity-50 ") +
-        (compact ? "min-w-11 shrink-0 justify-center" : "w-full")
+        "relative aspect-[5/4] overflow-hidden border text-left " +
+        (active ? "border-ion " : "border-[#6a5648] ") +
+        (on && afford ? "" : "opacity-45 ")
       }
     >
-      <Icon className="size-4 shrink-0 text-ion" />
-      {!compact && (
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-display text-base leading-tight">{def.name}</span>
-          <span className="block text-xs text-gold">
-            T{def.tier ?? 1} · {def.cost}
-          </span>
-        </span>
-      )}
+      <span className="absolute inset-0" style={{ background: scene }} />
+      <span className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-white/20 to-transparent" />
+      <Icon className="absolute top-[30%] left-1/2 size-6 -translate-x-1/2 -translate-y-1/2 text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]" />
+      <span className="absolute inset-x-0 bottom-0 bg-black/75 px-0.5 py-0.5 text-center font-display text-[10px] leading-tight text-white">{def.name}</span>
+      <span className="absolute top-0.5 right-0.5 font-display text-[9px] text-gold">{def.cost}</span>
       {pct !== undefined && <span className="absolute bottom-0 left-0 h-0.5 bg-ion" style={{ width: `${Math.round(pct * 100)}%` }} />}
     </button>
   );
