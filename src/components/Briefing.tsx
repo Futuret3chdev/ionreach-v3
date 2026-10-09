@@ -124,11 +124,11 @@ export function Briefing({
       <div className="flex items-center justify-between gap-3 border-t border-line bg-bg px-4 py-3">
         <p className="font-display text-sm tracking-[0.16em] text-gold">{locked ? "SEALED" : choice ? "CHOOSE" : "CHAPTER FILM"}</p>
         <div className="flex flex-wrap justify-end gap-2">
+          <button type="button" onClick={onBack} className="min-h-11 border border-line px-3 font-display">Go back</button>
+          <button type="button" onClick={onLoad} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
           <button type="button" disabled={locked || !choice} onClick={() => onPlay(watched.current)} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">
             Play now
           </button>
-          <button type="button" onClick={onBack} className="min-h-11 border border-line px-3 font-display">Go back</button>
-          <button type="button" onClick={onLoad} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
           {!choice && (
             <button type="button" onClick={() => hold(false)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>
           )}
