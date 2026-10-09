@@ -907,7 +907,7 @@ export function Ionreach() {
           <div className="w-full max-w-lg border border-line bg-surface p-5">
             <h2 className="font-display text-2xl font-semibold">Field manual</h2>
             <ul className="mt-3 space-y-2 text-sm text-muted">
-              <li>Drag a box to select many units. Shift-click adds to the selection. Double-click one soldier, tank, or plane to take every unit of that kind. Men, Tanks, Air, and All grab a whole group. On a phone, turn on Box, then drag. Right-click to move or attack.</li>
+              <li>Drag a box to select many units. On a phone, turn on Box, then drag. Shift-click adds to the selection. Right-click to move or attack. With Box off, dragging pans the map.</li>
               <li>Q, or A-move, then click is attack-move. H holds position. R repairs a building for ionite. X scraps it for half cost.</li>
               <li>WASD or arrows pan. Scroll or pinch to zoom. Right-drag pans. Space snaps to the selection. P pauses. Ctrl+1/2/3 stores a group.</li>
               <li>T3X is your callsign hull. It starts beside the spire and can be rebuilt at the vehicle bay. It can fire on aircraft.</li>
@@ -1039,30 +1039,18 @@ export function Ionreach() {
                 onPointerDown={onMini}
                 className="pointer-events-auto h-24 w-32 border border-line bg-bg md:h-32 md:w-44"
               />
-              <div className="pointer-events-auto flex max-w-[46%] flex-wrap gap-1">
+              <div className="pointer-events-auto">
                 <button
                   type="button"
                   onClick={() => {
                     pickModeRef.current = !pickModeRef.current;
                     setPickMode(pickModeRef.current);
                   }}
-                  className={"min-h-11 border px-2 font-display " + (pickMode ? "border-ion bg-ion text-bg" : "border-line bg-surface")}
+                  className={"min-h-11 border px-3 font-display " + (pickMode ? "border-ion bg-ion text-bg" : "border-line bg-surface")}
+                  aria-pressed={pickMode}
                 >
                   Box
                 </button>
-                {(["men", "tanks", "air", "all"] as const).map((which) => (
-                  <button
-                    key={which}
-                    type="button"
-                    onClick={() => {
-                      simRef.current?.selectClass(which);
-                      setHud(simRef.current?.snapshot() ?? null);
-                    }}
-                    className="min-h-11 border border-line bg-surface px-2 font-display capitalize"
-                  >
-                    {which === "men" ? "Men" : which === "tanks" ? "Tanks" : which === "air" ? "Air" : "All"}
-                  </button>
-                ))}
               </div>
               <SelectionCard hud={hud} onStop={() => simRef.current?.stop()} onRepair={() => simRef.current?.toggleRepair()} onSell={() => simRef.current?.sell()} onUpgrade={(wing) => simRef.current?.upgradeWing(0, wing)} onAmove={() => {
                 const sim = simRef.current;
