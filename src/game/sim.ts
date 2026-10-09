@@ -1745,7 +1745,7 @@ export class Sim {
     return d;
   }
 
-  private say(text: string): void {
+  say(text: string): void {
     this.messages.unshift({ text, life: 4.2 });
     if (this.messages.length > 4) this.messages.pop();
     this.uiDirty = true;

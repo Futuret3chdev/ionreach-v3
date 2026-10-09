@@ -179,8 +179,9 @@ export async function connectWalletConnect(): Promise<WalletSession> {
     },
   });
   await provider.connect();
-  wcProvider = provider;
-  return evmSession(provider, "WalletConnect");
+  const sessionProvider = provider as unknown as Eip1193 & { disconnect: () => Promise<void> };
+  wcProvider = sessionProvider;
+  return evmSession(sessionProvider, "WalletConnect");
 }
 
 export async function disconnectWallet(): Promise<void> {
