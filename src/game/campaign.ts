@@ -57,7 +57,7 @@ function arc(countryId: string, skin: Skin, rows: Row[]): Chapter[] {
     theater: row.theater,
     line: row.line,
     beats: [row.brief, row.line, row.hudson],
-    video: row.video ?? "",
+    video: row.video ? `${row.video}-story` : "",
     mid: row.mid ?? null,
     hudson: row.hudson,
     salt: skin.salt + i * 0.37,
@@ -247,9 +247,7 @@ const TIES: Record<string, { foe: string; ally: string }> = {
 function withAustralia(chapters: Chapter[]): Chapter[] {
   const first = chapters[0];
   const ties = TIES[first.countryId];
-  const opened = chapters.map((chapter, index) =>
-    index === 0 ? { ...chapter, video: `${chapter.countryId}-long` } : chapter,
-  );
+  const opened = chapters;
   const extra: Array<[string, string, string, string]> = [
     [
       "Melbourne Port",
@@ -280,7 +278,7 @@ function withAustralia(chapters: Chapter[]): Chapter[] {
       theater,
       line,
       beats: [brief, line, hudson] as [string, string, string],
-      video: `${first.countryId}-${["melbourne", "sydney", "queensland"][i]}`,
+      video: `${first.countryId}-${["melbourne", "sydney", "queensland"][i]}-story`,
       mid: null,
       hudson,
       salt: first.salt + 4 + i,
