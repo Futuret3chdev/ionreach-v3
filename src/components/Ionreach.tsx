@@ -554,7 +554,9 @@ export function Ionreach() {
     const sim = new Sim(chapterRef.current, setup ? mapById(setup.mapId) : null);
     if (setup) {
       const server = serverById(setup.serverId);
-      sim.say(`${server.name}. ${setup.format}. ${setup.opponent === "ai" ? "Computer opposition." : setup.opponent === "mixed" ? "Players and computer." : "Player opposition."} Room ${setup.room}.`);
+      sim.credits[0] = setup.startMoney;
+      if (!setup.abilities) sim.ability = { strike: 9999, dome: 9999, nuke: 9999 };
+      sim.say(`${server.name}. ${setup.format}. Team ${setup.team}. ${setup.startMoney} ionite. ${setup.abilities ? "Abilities on." : "Abilities off."} Room ${setup.room}.`);
     }
     applyLoadout(sim);
     simRef.current = sim;
