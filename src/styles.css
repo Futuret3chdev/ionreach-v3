@@ -64,3 +64,13 @@
     padding-top: 5.75rem;
   }
 }
+
+@media (display-mode: standalone), (display-mode: fullscreen) {
+  .open-menu {
+    padding-top: max(env(safe-area-inset-top), 3.75rem);
+  }
+
+  .open-screen {
+    top: max(calc(env(safe-area-inset-top) + 0.75rem), 4.25rem);
+  }
+}

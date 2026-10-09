@@ -12,7 +12,7 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black" },
       { title: APP_NAME },
       { name: "description", content: "IONREACH version 3. Pick a country, watch the chapter, then fight across rivers, trees, and mountains." },
       { name: "theme-color", content: "#07090e" },
