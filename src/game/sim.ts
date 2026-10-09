@@ -249,9 +249,10 @@ export class Sim {
   missionHome = false;
   cargoId = -1;
   siloId = -1;
+  sides = 1;
   private by = new Map<number, Ent>();
 
-  constructor(chapterId = "usa-01", mission: SkirmishMap | null = null) {
+  constructor(chapterId = "usa-01", mission: SkirmishMap | null = null, sides = 1) {
     const chapter = chapterById(chapterId);
     this.chapterId = chapter.id;
     this.pois = buildMap(chapter);
@@ -264,6 +265,7 @@ export class Sim {
     this.explored = new Uint8Array(COLS * ROWS);
     this.visible = new Uint8Array(COLS * ROWS);
     this.mission = mission;
+    this.sides = Math.min(4, Math.max(1, sides));
     this.seed();
     this.armMission();
     this.recomputeBlocks();
@@ -402,8 +404,23 @@ export class Sim {
     this.addUnit("kestrel", 1, 2240, 440);
     this.addUnit("kestrel", 1, 2460, 470);
     this.addUnit("condor", 1, 2360, 560);
+    for (let i = 1; i < this.sides; i++) {
+      const shift = i * 260;
+      this.addBuilding("spire", 0, 10.5 * TILE + shift, 46 * TILE, true);
+      this.addBuilding("refinery", 0, 12 * TILE + shift, 48 * TILE, true);
+      this.addUnit("viper", 0, 520 + shift, 1360);
+      this.addUnit("lancer", 0, 620 + shift, 1400);
+      this.addUnit("rifle", 0, 480 + shift, 1440);
+      this.addUnit("rifle", 0, 540 + shift, 1440);
+      this.addBuilding("spire", 1, 63.5 * TILE - shift, 16 * TILE, true);
+      this.addBuilding("refinery", 1, 61 * TILE - shift, 18 * TILE, true);
+      this.addUnit("viper", 1, 1680 - shift, 900);
+      this.addUnit("lancer", 1, 1760 - shift, 940);
+      this.addUnit("rifle", 1, 1640 - shift, 980);
+      this.addUnit("rifle", 1, 1700 - shift, 980);
+    }
     this.selected = [p.id, ace.id];
-    this.say("Callsign T3X is on the glass. The spire is yours — the glow is not.");
+    this.say(this.sides === 1 ? "Callsign T3X is on the glass. The spire is yours — the glow is not." : `${this.sides}v${this.sides}. ${this.sides} commanders on your side, ${this.sides} on theirs.`);
   }
 
   private make(kind: Kind, team: Team, x: number, y: number): Ent {

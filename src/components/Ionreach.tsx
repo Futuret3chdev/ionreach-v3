@@ -551,7 +551,8 @@ export function Ionreach() {
     setPicking(false);
     setSkirmish(false);
     setTrailerChoice(false);
-    const sim = new Sim(chapterRef.current, setup ? mapById(setup.mapId) : null);
+    const sides = setup ? Number(setup.format[0]) : 1;
+    const sim = new Sim(chapterRef.current, setup ? mapById(setup.mapId) : null, sides);
     if (setup) {
       const server = serverById(setup.serverId);
       sim.credits[0] = setup.startMoney;
