@@ -154,6 +154,11 @@ export function Ionreach() {
   }, []);
 
   useEffect(() => {
+    if (!brief) return;
+    vidRef.current?.pause();
+  }, [brief]);
+
+  useEffect(() => {
     phaseRef.current = phase;
     if (phase === "title" && vidRef.current) {
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -604,7 +609,7 @@ export function Ionreach() {
           <p className="font-display text-sm tracking-[0.28em] text-ion">VERSION 3 · HELION DIRECTORATE · T3X</p>
           <h1 className="font-display text-6xl leading-none font-bold text-fg md:text-8xl">IONREACH</h1>
           <p className="mt-2 max-w-xl text-base text-muted md:text-lg">
-            Ten countries. A 45-second chapter film, then the fight. Men, tanks, and aircraft on a map with rivers, trees, and mountains.
+            Ten countries. A story cutscene, then the fight. Men, tanks, and aircraft on a map with rivers, trees, and mountains.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <button type="button" onClick={() => setPicking(true)} className="min-h-11 bg-ion px-5 font-display text-lg font-semibold text-bg">
@@ -653,7 +658,7 @@ export function Ionreach() {
                 Close
               </button>
             </div>
-            <p className="mt-2 max-w-2xl text-sm text-muted">Each country is its own story. The film runs 45 seconds, then you drop in. Skip it if you already know the ground.</p>
+            <p className="mt-2 max-w-2xl text-sm text-muted">Each country is its own story. A cutscene plays first, then you drop in. Skip it if you already know the ground.</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {CHAPTERS.map((chapter) => (
                 <button key={chapter.id} type="button" onClick={() => { setPicking(false); setBrief(chapter); }} className="border border-line bg-surface p-4 text-left">
