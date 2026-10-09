@@ -146,7 +146,8 @@ export function Ionreach() {
   const [menuTool, setMenuTool] = useState<MenuTool | null>(null);
   const [settingsTab, setSettingsTab] = useState<"wallet" | "saves">("wallet");
   const [full, setFull] = useState(false);
-  const [tools, setTools] = useState({ command: true, select: true, map: false, powers: false });
+  const [tools, setTools] = useState({ command: true, select: true, map: false, powers: false, match: false });
+  const [yieldAsk, setYieldAsk] = useState(false);
   const [records, setRecords] = useState(false);
   const [skirmish, setSkirmish] = useState(false);
   const [trailerChoice, setTrailerChoice] = useState(false);
@@ -155,6 +156,7 @@ export function Ionreach() {
   const [earned, setEarned] = useState<Badge[]>([]);
   const [toasts, setToasts] = useState<Badge[]>([]);
   const chapterRef = useRef("usa-01");
+  const setupRef = useRef<SkirmishSetup | null>(null);
   const earnedRef = useRef<Badge[]>([]);
   const [tiersOpen, setTiersOpen] = useState(false);
   const [abilitiesOpen, setAbilitiesOpen] = useState(false);
@@ -579,10 +581,25 @@ export function Ionreach() {
     sim.recomputeBlocks();
   }
 
+  function exitMatch() {
+    pauseRef.current = false;
+    modeRef.current = "play";
+    setFlyover(false);
+    setBrief(null);
+    setMid(null);
+    simRef.current = null;
+    phaseRef.current = "title";
+    setPhase("title");
+    setMenuChrome(true);
+    setMenuTool(null);
+    setYieldAsk(false);
+  }
+
   function deploy(id = chapterRef.current, setup: SkirmishSetup | null = null) {
     sfx.current.unlock();
     if (musicOnRef.current) sfx.current.startScore();
     chapterRef.current = setup ? mapById(setup.mapId).chapterId : id;
+    setupRef.current = setup;
     midPlayed.current = false;
     setMid(null);
     setMidChoice(false);
@@ -1055,6 +1072,7 @@ export function Ionreach() {
                     ["select", "Selection"],
                     ["map", "Map"],
                     ["powers", "Powers"],
+                    ["match", "Match"],
                   ] as const
                 ).map(([key, label]) => (
                   <button
@@ -1069,6 +1087,20 @@ export function Ionreach() {
                 ))}
               </div>
               {tools.command && <CommandMenu tray={tray} onTray={setTray} hud={hud} onPick={(k) => simRef.current?.armPlace(k)} />}
+              {tools.match && (
+                <div className="flex flex-wrap gap-2 px-2 pb-2">
+                  <button type="button" onClick={exitMatch} className="min-h-9 border border-line px-3 font-display text-xs">Exit</button>
+                  <button type="button" onClick={() => { setYieldAsk(false); deploy(chapterRef.current, setupRef.current); }} className="min-h-9 border border-line px-3 font-display text-xs">Reset</button>
+                  {!yieldAsk ? (
+                    <button type="button" onClick={() => setYieldAsk(true)} className="min-h-9 border border-ember px-3 font-display text-xs text-ember">Surrender</button>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => { simRef.current?.surrender(); setYieldAsk(false); }} className="min-h-9 bg-ember px-3 font-display text-xs text-bg">Confirm surrender</button>
+                      <button type="button" onClick={() => setYieldAsk(false)} className="min-h-9 border border-line px-3 font-display text-xs">Stay</button>
+                    </>
+                  )}
+                </div>
+              )}
               <canvas
                 ref={miniRef}
                 width={180}
@@ -1308,11 +1340,14 @@ function Mark({ kind }: { kind: Kind }) {
   }
   return (
     <svg viewBox="0 0 64 32" className="h-8 w-12" aria-hidden>
-      <circle cx={kind === "rocket" ? 40 : 34} cy="12" r="4" fill={kind === "specops" ? "#8ea0aa" : "#e6c2a4"} />
-      <path d="M28 16 H40 L38 26 H30 Z" fill={kind === "sergeant" ? "#2a3428" : kind === "specops" ? "#1c242c" : "#4a4034"} />
-      <path d={kind === "rocket" ? "M40 14 H56" : kind === "grenadier" ? "M40 18 L52 10" : "M40 16 H54"} stroke="#d5dee6" strokeWidth="2" />
-      {kind === "patrol" && <ellipse cx="20" cy="22" rx="5" ry="3" fill="#6a5038" />}
-      {kind === "watch" && <rect x="38" y="10" width="6" height="2" fill="#d5dee6" />}
+      <circle cx="24" cy="8" r="3.2" fill={kind === "specops" ? "#8ea0aa" : "#e6c2a4"} />
+      <path d="M20 12 H28 L27 24 H21 Z" fill={kind === "specops" ? "#1c242c" : kind === "sergeant" ? "#243028" : "#3d4a34"} />
+      <path d="M27 16 H48" stroke="#1a1e22" strokeWidth={kind === "rocket" ? 3 : 1.6} />
+      <path d="M30 16 V20" stroke="#1a1e22" strokeWidth="1.4" />
+      <path d="M22 24 V28 M26 24 V28" stroke="#14110e" strokeWidth="1.6" />
+      {kind === "patrol" && <ellipse cx="14" cy="22" rx="4" ry="2.2" fill="#6a5038" />}
+      {kind === "watch" && <rect x="27" y="6" width="6" height="2" fill="#d5dee6" />}
+      {kind === "sergeant" && <rect x="22" y="14" width="2" height="2" fill="#e8c56b" />}
     </svg>
   );
 }
@@ -1383,7 +1418,7 @@ function Cameo({ kind, hud, onClick }: { kind: Kind; hud: HudSnap | null; onClic
       title={`${def.name} — ${def.cost} ionite. ${def.blurb}`}
       className={
         "relative flex w-[76px] shrink-0 flex-col border bg-[#121820] text-left " +
-        (active ? "border-ion " : "border-[#3a4654] ") +
+        (active ? "animate-pulse border-ion " : "border-[#3a4654] ") +
         (on && afford ? "" : "opacity-40 ")
       }
     >

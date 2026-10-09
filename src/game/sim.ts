@@ -345,6 +345,10 @@ export class Sim {
     }
   }
 
+  surrender(): void {
+    this.declare(1, "The field was surrendered.");
+  }
+
   private declare(team: 0 | 1, line: string): void {
     if (this.winner !== null) return;
     this.winner = team;
