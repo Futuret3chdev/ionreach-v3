@@ -64,8 +64,9 @@ export function Briefing({
     const video = videoRef.current;
     if (video) {
       video.muted = true;
-      video.loop = true;
+      video.loop = false;
       const startVideo = () => {
+        video.currentTime = 0;
         void video.play().catch(() => setBlocked(true));
       };
       if (video.readyState >= 2) startVideo();
@@ -85,8 +86,8 @@ export function Briefing({
     let audio = audioRef.current;
     if (audio && !audio.paused) {
       audio.pause();
+      if (video) video.pause();
       setSpeaking(false);
-      if (video) void video.play().catch(() => undefined);
       return;
     }
     if (!audio) {
@@ -103,12 +104,14 @@ export function Briefing({
       audio.onended = () => {
         setSpeaking(false);
         const film = videoRef.current;
-        if (film) void film.play().catch(() => undefined);
+        if (film) film.pause();
       };
     }
     if (video) {
       video.muted = true;
-      video.pause();
+      video.loop = false;
+      video.currentTime = 0;
+      void video.play().catch(() => undefined);
     }
     setSound(false);
     setVoiceNote("");
@@ -179,11 +182,10 @@ export function Briefing({
           ref={videoRef}
           key={chapter.id}
           className="aspect-video w-full bg-black object-cover"
-          src={`/media/briefings/${chapter.video}.mp4?v=drive2`}
+          src={`/media/readfilm/${chapter.id}.mp4?v=fit1`}
           playsInline
           autoPlay
           muted
-          loop
           onTimeUpdate={() => {
             const video = videoRef.current;
             if (video && video.currentTime > 1) watched.current = true;
