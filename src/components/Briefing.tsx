@@ -51,7 +51,7 @@ export function Briefing({
         ref={videoRef}
         key={chapter.id}
         className="h-full w-full bg-black object-contain"
-        src={`/media/briefings/${chapter.video}.mp4?v=min1`}
+        src={`/media/briefings/${chapter.video}.mp4?v=natural`}
         poster="/media/poster.jpg"
         playsInline
         autoPlay
