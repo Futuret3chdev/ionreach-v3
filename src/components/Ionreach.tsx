@@ -890,7 +890,8 @@ export function Ionreach() {
                                 return (
                                   <article key={chapter.id} className="border border-line bg-[#101820] p-2">
                                     <p className="font-display text-sm">{chapter.theater}</p>
-                                    <p className="mt-1 text-[13px] leading-snug text-fg/90">{open ? (STORIES[chapter.theater] ?? chapter.line) : "Signal stays dark."}</p>
+                                    <p className="mt-1 text-[13px] leading-snug text-fg/90">{STORIES[chapter.theater] ?? chapter.line}</p>
+                                    {!open && <p className="mt-1 text-[11px] text-muted">Sealed until the fight before it is held.</p>}
                                     <div className="mt-2 flex gap-1">
                                       <button type="button" disabled={!chapter.video} onClick={() => { if (!chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 border border-line px-2 font-display text-xs disabled:text-muted">Watch</button>
                                       <button type="button" disabled={!open || !chapter.video} onClick={() => { if (!open || !chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 bg-ion px-2 font-display text-xs text-bg disabled:bg-line disabled:text-muted">Play</button>
