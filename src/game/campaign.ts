@@ -57,7 +57,7 @@ function arc(countryId: string, skin: Skin, rows: Row[]): Chapter[] {
     theater: row.theater,
     line: row.line,
     beats: [row.brief, row.line, row.hudson],
-    video: `${(row.video ?? "").replace(/-brief$/, "")}-story`,
+    video: row.video ?? "",
     mid: null,
     hudson: row.hudson,
     salt: skin.salt + i * 0.37,
