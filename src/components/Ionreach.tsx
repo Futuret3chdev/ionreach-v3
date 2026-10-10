@@ -860,7 +860,7 @@ export function Ionreach() {
                           <Flag id={id} className="h-12 w-20 shrink-0" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-display text-lg">{chapters[0]?.country}</span>
-                            <span className="block text-xs text-muted">{chapters.length} chapters{on ? "" : " · open"}</span>
+                            <span className="block text-xs text-muted">{chapters[0]?.theater}</span>
                           </span>
                         </button>
                         {on && fact && (
@@ -887,12 +887,8 @@ export function Ionreach() {
                                 const open = isOpen(list, index);
                                 return (
                                   <article key={chapter.id} className="border border-line bg-[#101820] p-2">
-                                    <p className="font-display text-[10px] tracking-[0.14em] text-ion">
-                                      CHAPTER {chapter.index}
-                                      {!open ? " · SEALED" : ""}
-                                    </p>
                                     <p className="font-display text-sm">{chapter.theater}</p>
-                                    <p className="mt-1 text-[11px] text-muted">{open ? chapter.line : "Watch the previous film, or win that fight."}</p>
+                                    <p className="mt-1 text-[11px] text-muted">{open ? chapter.line : "Signal stays dark."}</p>
                                     <div className="mt-2 flex gap-1">
                                       <button type="button" disabled={!chapter.video} onClick={() => { if (!chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 border border-line px-2 font-display text-xs disabled:text-muted">Watch</button>
                                       <button type="button" disabled={!open || !chapter.video} onClick={() => { if (!open || !chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 bg-ion px-2 font-display text-xs text-bg disabled:bg-line disabled:text-muted">Play</button>

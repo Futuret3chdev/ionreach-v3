@@ -66,9 +66,9 @@ export function Briefing({
         </button>
       )}
       <div className="pointer-events-none absolute inset-x-0 bottom-24 z-10 bg-gradient-to-t from-black via-black/80 to-transparent px-5 pt-12 pb-3 md:px-12">
-        <p className="font-display text-xs tracking-[0.22em] text-ion">{chapter.country.toUpperCase()} · CHAPTER {chapter.index}</p>
+        <p className="font-display text-xs tracking-[0.22em] text-ion">{chapter.country.toUpperCase()}</p>
         <h2 className="font-display text-4xl font-semibold text-fg">{chapter.theater}</h2>
-        <p className="mt-1 max-w-3xl text-base text-fg">{choice ? "This part of the country story is finished. The fight does not start until you choose." : `${chapter.beats[0]} This chapter only: ${chapter.line}`}</p>
+        <p className="mt-1 max-w-3xl text-base text-fg">{choice ? "The net is quiet. Move when you are ready." : chapter.beats[0]}</p>
       </div>
       <div className="absolute inset-x-0 bottom-0 z-30 flex flex-wrap items-center gap-2 border-t border-line bg-bg px-3 py-3">
         <button type="button" onClick={onBack} className="min-h-11 border border-line bg-surface px-4 font-display">Back to menu</button>

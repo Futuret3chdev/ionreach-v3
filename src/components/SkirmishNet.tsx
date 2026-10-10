@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { CHAPTERS } from "@/game/campaign";
 import { EXPANSIONS, FORMATS, MONEY_MAX, MONEY_MIN, OPPONENTS, SERVERS, SKIRMISH_MAPS, listRooms, mapById, publishRoom, serverStats, teamsFor, type FormatId, type OpenRoom, type OpponentMode, type SkirmishSetup } from "@/game/skirmish";
 
 export function SkirmishNet({ onClose, onHost, dock }: { onClose: () => void; onHost: (setup: SkirmishSetup) => void; dock?: boolean }) {
@@ -15,7 +14,6 @@ export function SkirmishNet({ onClose, onHost, dock }: { onClose: () => void; on
   const [rooms, setRooms] = useState<OpenRoom[]>(() => listRooms());
   const listed = rooms.filter((item) => item.serverId === serverId);
   const stats = serverStats(serverId);
-  const played = CHAPTERS.filter((c) => c.countryId === "australia").length;
 
   function enter(setup: SkirmishSetup, hosting: boolean) {
     if (hosting) {
@@ -59,7 +57,7 @@ export function SkirmishNet({ onClose, onHost, dock }: { onClose: () => void; on
                         <span className="font-display text-xl">{server.name}</span>
                         <span className="font-display text-xs tracking-[0.14em] text-ion">OPEN</span>
                       </span>
-                      <span className="mt-1 block text-sm text-muted">{row.matches} matches · {row.kills} kills · {row.teams} teams · {row.chapters} chapters</span>
+                      <span className="mt-1 block text-sm text-muted">{row.matches} matches · {row.kills} kills · {row.teams} teams</span>
                     </button>
                   );
                 })}
@@ -112,7 +110,7 @@ export function SkirmishNet({ onClose, onHost, dock }: { onClose: () => void; on
               </div>
               <label className="mt-4 block font-display text-xs tracking-[0.16em] text-muted">ROOM NAME</label>
               <input value={room} onChange={(e) => setRoom(e.target.value)} className="mt-2 w-full border border-line bg-bg px-3 py-2" />
-              <p className="mt-2 text-sm text-muted">{played} Australian chapters on this build. Your hosted room stays on this server list.</p>
+              <p className="mt-2 text-sm text-muted">Your hosted room stays on this server list.</p>
               <button type="button" onClick={() => enter({ serverId, room, format, opponent, mapId, team, startMoney, abilities }, true)} className="mt-4 min-h-11 bg-ion px-4 font-display text-bg">Host and enter</button>
             </section>
           </div>

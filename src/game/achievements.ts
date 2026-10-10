@@ -41,10 +41,10 @@ const CATALOG: Badge[] = [
   { id: "air", name: "Sky closed", detail: "Destroy an enemy aircraft." },
   { id: "wrecker", name: "Wrecker", detail: "Destroy an enemy structure." },
   { id: "column", name: "Broken column", detail: "Destroy 12 enemies in one fight." },
-  { id: "spire", name: "Spire dust", detail: "Win a chapter." },
+  { id: "spire", name: "Spire dust", detail: "Hold the ground." },
   { id: "fallen", name: "Horizon lost", detail: "Lose a spire and finish the fight." },
-  { id: "three", name: "Three theaters", detail: "Win three different chapters." },
-  { id: "all", name: "Full shelf", detail: "Win every filmed chapter." },
+  { id: "three", name: "Three theaters", detail: "Hold three different grounds." },
+  { id: "all", name: "Full shelf", detail: "Hold every filmed ground." },
 ];
 
 export function allBadges(): { badge: Badge; owned: boolean }[] {
