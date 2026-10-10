@@ -15,19 +15,6 @@ function tokensOf(text: string): Token[] {
   });
 }
 
-function wordAt(text: string, charIndex: number): number {
-  return text.slice(0, Math.max(0, charIndex)).match(/\S+/g)?.length ?? 0;
-}
-
-function pickVoice(): SpeechSynthesisVoice | null {
-  const voices = window.speechSynthesis?.getVoices() ?? [];
-  return (
-    voices.find((voice) => /en-US|en_US/i.test(voice.lang) && /daniel|alex|david|fred|male/i.test(voice.name)) ??
-    voices.find((voice) => voice.lang.toLowerCase().startsWith("en")) ??
-    null
-  );
-}
-
 export function Briefing({
   chapter,
   locked = false,
@@ -55,8 +42,10 @@ export function Briefing({
   const hudsonTokens = tokensOf(chapter.hudson ?? "");
   const hudsonShift = storyTokens.reduce((n, token) => n + (token.word === null ? 0 : 1), 0);
 
-  const speakRef = useRef<() => void>(() => {});
-  const stopRef = useRef<() => void>(() => {});
+  const held = useRef<SpeechSynthesisUtterance[]>([]);
+  const stepRef = useRef(0);
+  const stopSpeak = useRef(false);
+  const [voiceNote, setVoiceNote] = useState("");
 
   useEffect(() => {
     const box = scroller.current;
@@ -83,98 +72,86 @@ export function Briefing({
       if (video.readyState >= 2) startVideo();
       else video.addEventListener("loadeddata", startVideo, { once: true });
     }
-    const synth = window.speechSynthesis;
-    synth?.cancel();
-    let stop = false;
-    let kick = 0;
-    let step = 0;
-
-    const chunks: { text: string; start: number }[] = [];
-    const parts = spoken.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [spoken];
-    let cursor = 0;
-    for (const part of parts) {
-      const at = spoken.indexOf(part, cursor);
-      const startAt = at < 0 ? cursor : at;
-      chunks.push({ text: part.trim(), start: startAt });
-      cursor = startAt + part.length;
-    }
-
-    const speakFrom = (index: number) => {
-      if (stop || !synth) return;
-      const chunk = chunks[index];
-      if (!chunk?.text) {
-        setSpeaking(false);
-        return;
-      }
-      const utter = new SpeechSynthesisUtterance(chunk.text);
-      utter.rate = 0.96;
-      utter.lang = "en-US";
-      const voice = pickVoice();
-      if (voice) utter.voice = voice;
-      const base = wordAt(spoken, chunk.start);
-      const count = chunk.text.match(/\S+/g)?.length ?? 0;
-      let local = 0;
-      let followed = false;
-      const arm = () => {
-        window.clearInterval(step);
-        step = window.setInterval(() => {
-          if (followed || stop || local >= count) return;
-          setActive(base + local);
-          local += 1;
-        }, 380);
-      };
-      utter.onstart = arm;
-      utter.onboundary = (event) => {
-        if (event.name && event.name !== "word") return;
-        if (event.charIndex <= 0) return;
-        followed = true;
-        window.clearInterval(step);
-        setActive(wordAt(spoken, chunk.start + event.charIndex));
-      };
-      utter.onend = () => {
-        window.clearInterval(step);
-        if (!stop) speakFrom(index + 1);
-      };
-      utter.onerror = () => {
-        window.clearInterval(step);
-        if (!stop) setSpeaking(false);
-      };
-      setSpeaking(true);
-      synth.speak(utter);
+    return () => {
+      stopSpeak.current = true;
+      window.clearInterval(stepRef.current);
+      window.speechSynthesis?.cancel();
     };
-
-    speakRef.current = () => {
-      if (!synth) return;
-      stop = true;
-      window.clearInterval(step);
-      synth.cancel();
-      stop = false;
-      setActive(-1);
-      if (video) video.muted = true;
-      setSound(false);
-      speakFrom(0);
-    };
-    stopRef.current = () => {
-      stop = true;
-      window.clearInterval(step);
-      window.clearInterval(kick);
-      synth?.cancel();
-    };
-
-    const boot = () => {
-      if (!stop) speakFrom(0);
-    };
-    if (!synth) return stopRef.current;
-    if (synth.getVoices().length) boot();
-    else synth.addEventListener("voiceschanged", boot, { once: true });
-    kick = window.setInterval(() => {
-      if (synth.paused) synth.resume();
-    }, 8000);
-    return () => stopRef.current();
   }, [chapter.id, spoken]);
 
   function readAloud() {
-    speakRef.current();
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      setVoiceNote("This phone has no voice.");
+      return;
+    }
+    if (speaking || synth.speaking) {
+      stopSpeak.current = true;
+      window.clearInterval(stepRef.current);
+      synth.cancel();
+      setSpeaking(false);
+      setActive(-1);
+      const video = videoRef.current;
+      if (video) void video.play().catch(() => undefined);
+      return;
+    }
+    stopSpeak.current = false;
+    setVoiceNote("");
+    const video = videoRef.current;
+    if (video) {
+      video.muted = true;
+      video.pause();
+    }
+    setSound(false);
+    const parts = spoken.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((part) => part.trim()).filter(Boolean) ?? [spoken];
+    held.current = [];
+    const words = spoken.match(/\S+/g) ?? [];
+    let local = 0;
+    setActive(0);
+    window.clearInterval(stepRef.current);
+    stepRef.current = window.setInterval(() => {
+      local += 1;
+      if (local >= words.length) {
+        window.clearInterval(stepRef.current);
+        return;
+      }
+      setActive(local);
+    }, 370);
+    let heard = false;
+    const queue = (index: number) => {
+      if (stopSpeak.current) return;
+      const text = parts[index];
+      if (!text) {
+        setSpeaking(false);
+        const film = videoRef.current;
+        if (film) void film.play().catch(() => undefined);
+        return;
+      }
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-US";
+      utter.rate = 0.96;
+      utter.volume = 1;
+      held.current.push(utter);
+      utter.onstart = () => {
+        heard = true;
+        setVoiceNote("");
+      };
+      utter.onend = () => {
+        if (!stopSpeak.current) queue(index + 1);
+      };
+      utter.onerror = () => {
+        if (stopSpeak.current) return;
+        setSpeaking(false);
+        setVoiceNote("No voice. Switch off silent mode, then tap Read.");
+      };
+      synth.speak(utter);
+      if (synth.paused) synth.resume();
+    };
+    setSpeaking(true);
+    queue(0);
+    window.setTimeout(() => {
+      if (!heard && !stopSpeak.current) setVoiceNote("No voice. Switch off silent mode, then tap Read.");
+    }, 1200);
   }
 
   function play() {
@@ -248,6 +225,7 @@ export function Briefing({
       <article ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         <p className="font-display text-xs tracking-[0.22em] text-ion">{chapter.country.toUpperCase()}</p>
         <h2 className="font-display text-3xl font-semibold text-fg">{chapter.theater}</h2>
+        {voiceNote && <p className="mt-2 text-sm text-gold">{voiceNote}</p>}
         <p className="mt-3 max-w-3xl text-base leading-relaxed text-fg">{storyTokens.map(paint)}</p>
         {chapter.hudson && (
           <p className="mt-4 max-w-3xl text-sm leading-relaxed text-fg">
