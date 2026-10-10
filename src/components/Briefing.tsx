@@ -108,12 +108,13 @@ export function Briefing({
       };
     }
     if (video) {
-      video.muted = true;
       video.loop = false;
+      video.muted = false;
+      video.volume = 1;
       video.currentTime = 0;
       void video.play().catch(() => undefined);
     }
-    setSound(false);
+    setSound(true);
     setVoiceNote("");
     setActive(0);
     setSpeaking(true);
@@ -144,6 +145,8 @@ export function Briefing({
     setSound(next);
     const video = videoRef.current;
     if (video) video.muted = !next;
+    const voice = audioRef.current;
+    if (voice) voice.muted = !next;
   }
 
   function paint(token: Token, index: number) {
@@ -182,10 +185,10 @@ export function Briefing({
           ref={videoRef}
           key={chapter.id}
           className="aspect-video w-full bg-black object-cover"
-          src={`/media/readfilm/${chapter.id}.mp4?v=fit1`}
+          src={`/media/readfilm/${chapter.id}.mp4?v=sfx1`}
           playsInline
           autoPlay
-          muted
+          muted={!sound}
           onTimeUpdate={() => {
             const video = videoRef.current;
             if (video && video.currentTime > 1) watched.current = true;
