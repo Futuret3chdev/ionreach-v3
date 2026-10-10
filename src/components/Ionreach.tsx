@@ -647,16 +647,17 @@ export function Ionreach() {
   }
 
   function openCinema(at = 0) {
+    void at;
     sfx.current.unlock();
     sfx.current.stopScore();
     setCinema(true);
-    setMuted(false);
+    setMuted(true);
     if (vidRef.current) vidRef.current.pause();
     window.setTimeout(() => {
       const v = cutRef.current;
       if (!v) return;
-      v.currentTime = at;
-      v.muted = false;
+      v.muted = true;
+      v.loop = true;
       void v.play().catch(() => undefined);
     }, 40);
   }
@@ -972,13 +973,12 @@ export function Ionreach() {
 
       {cinema && (
         <div className="absolute inset-0 z-30 bg-bg">
-          <video ref={cutRef} className="h-full w-full object-contain" src="/media/trailer.mp4?v=9" autoPlay playsInline poster="/media/poster.jpg" onEnded={() => setTrailerChoice(true)} />
+          <video ref={cutRef} className="h-full w-full object-contain" src="/media/trailer.mp4?v=drive" autoPlay muted loop playsInline />
           <button type="button" onClick={() => { setTrailerChoice(false); closeCinema(); }} className="absolute top-3 left-3 z-30 min-h-11 border border-line bg-bg px-4 font-display">Back to menu</button>
           <div className="absolute inset-x-0 bottom-0 z-30 flex flex-wrap items-center gap-2 border-t border-line bg-bg px-3 py-3">
             <button type="button" onClick={() => { setTrailerChoice(false); closeCinema(); }} className="min-h-11 border border-line bg-surface px-4 font-display">Back to menu</button>
             <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
-            <button type="button" disabled={!trailerChoice} onClick={() => { setTrailerChoice(false); closeCinema(); setMenuTool("campaign"); setMenuChrome(true); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
-            {!trailerChoice && <button type="button" onClick={() => setTrailerChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
+            <button type="button" onClick={() => { setTrailerChoice(false); closeCinema(); setMenuTool("campaign"); setMenuChrome(true); }} className="min-h-11 bg-ion px-4 font-display text-bg">Play now</button>
           </div>
         </div>
       )}
@@ -1009,13 +1009,12 @@ export function Ionreach() {
 
       {mid && (
         <div className="absolute inset-0 z-30 bg-black">
-          <video className="h-full w-full bg-black object-contain" src={`/media/briefings/${mid}.mp4`} autoPlay playsInline onEnded={() => setMidChoice(true)} />
+          <video className="h-full w-full bg-black object-contain" src={`/media/briefings/${mid}.mp4?v=drive`} autoPlay muted loop playsInline />
           <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; setMenuTool("campaign"); setMenuChrome(true); }} className="absolute top-3 left-3 z-30 min-h-11 border border-line bg-bg px-4 font-display">Back to menu</button>
           <div className="absolute inset-x-0 bottom-0 z-30 flex flex-wrap items-center gap-2 border-t border-line bg-bg px-3 py-3">
             <button type="button" onClick={() => { setMid(null); setMidChoice(false); setPhase("title"); phaseRef.current = "title"; setMenuTool("campaign"); setMenuChrome(true); }} className="min-h-11 border border-line bg-surface px-4 font-display">Back to menu</button>
             <button type="button" onClick={() => { pendingLoad.current = true; setSettings(true); }} className="min-h-11 border border-line px-3 font-display">Load saved game</button>
-            <button type="button" disabled={!midChoice} onClick={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); setMidChoice(false); }} className="min-h-11 bg-ion px-4 font-display text-bg disabled:cursor-not-allowed disabled:bg-line disabled:text-muted">Play now</button>
-            {!midChoice && <button type="button" onClick={() => setMidChoice(true)} className="min-h-11 border border-line px-3 font-display">Skip to choice</button>}
+            <button type="button" onClick={() => { pauseRef.current = false; if (simRef.current) simRef.current.paused = false; setMid(null); setMidChoice(false); }} className="min-h-11 bg-ion px-4 font-display text-bg">Play now</button>
           </div>
         </div>
       )}
