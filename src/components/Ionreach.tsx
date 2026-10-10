@@ -27,6 +27,7 @@ import {
 import { BUILD_MENU, DEFS, TIER_MAP, WORLD_H, WORLD_W, nextUpgradeCost, structureTitle, type Kind, type TechWing } from "@/game/content";
 import { Sfx } from "@/game/audio";
 import { Renderer, type Cam } from "@/game/render";
+import { World3D, type EyeLook } from "@/game/world3d";
 import { Sim, type HudSnap } from "@/game/sim";
 import { SettingsPanel } from "@/components/SettingsPanel";
 import { Briefing } from "@/components/Briefing";
@@ -79,7 +80,8 @@ function clock(t: number): string {
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
-function screenToWorld(sx: number, sy: number, cam: Cam, w: number, h: number): { x: number; y: number } {
+function screenToWorld(sx: number, sy: number, cam: Cam, w: number, h: number, world: World3D | null): { x: number; y: number } {
+  if (world) return world.groundAt(sx, sy, w, h);
   return { x: (sx - w / 2) / cam.z + cam.x, y: (sy - h / 2) / cam.z + cam.y };
 }
 
@@ -116,6 +118,9 @@ export function Ionreach() {
   const keys = useRef(new Set<string>());
   const sfx = useRef(new Sfx());
   const modeRef = useRef<"intro" | "play">("intro");
+  const viewRef = useRef<"tac" | "eye">("tac");
+  const lookRef = useRef<EyeLook>({ yaw: 0, pitch: 0, fov: 68 });
+  const worldRef = useRef<World3D | null>(null);
   const introRef = useRef(0);
   const pauseRef = useRef(false);
   const pointer = useRef({ x: 0, y: 0, down: false, sx: 0, sy: 0, wx: 0, wy: 0, drag: false, button: 0, touch: false });
@@ -127,6 +132,7 @@ export function Ionreach() {
   const [cinema, setCinema] = useState(false);
   const [muted, setMuted] = useState(true);
   const [flyover, setFlyover] = useState(false);
+  const [eye, setEye] = useState(false);
   const [introLine, setIntroLine] = useState("Helion forward base.");
   const lineRef = useRef("");
   const [best, setBest] = useState<number | null>(null);
@@ -218,9 +224,10 @@ export function Ionreach() {
     const mini = miniRef.current;
     const sim = simRef.current;
     if (!canvas || !mini || !sim) return;
-    const ctx = canvas.getContext("2d");
     const mctx = mini.getContext("2d");
-    if (!ctx || !mctx) return;
+    if (!mctx) return;
+    const world3d = new World3D(canvas);
+    worldRef.current = world3d;
     const renderer = new Renderer();
     let raf = 0;
     let last = performance.now();
@@ -234,6 +241,7 @@ export function Ionreach() {
       last = now;
       const rect = canvas.getBoundingClientRect();
       const cam = camRef.current;
+      const glancing = viewRef.current === "eye" && modeRef.current === "play";
       if (modeRef.current === "intro") {
         introRef.current += dt;
         const u = Math.min(1, introRef.current / 9);
@@ -256,27 +264,39 @@ export function Ionreach() {
           setFlyover(false);
         }
       } else if (!pauseRef.current && sim.winner === null) {
-        let vx = 0;
-        let vy = 0;
-        if (keys.current.has("KeyA") || keys.current.has("ArrowLeft")) vx -= 1;
-        if (keys.current.has("KeyD") || keys.current.has("ArrowRight")) vx += 1;
-        if (keys.current.has("KeyW") || keys.current.has("ArrowUp")) vy -= 1;
-        if (keys.current.has("KeyS") || keys.current.has("ArrowDown")) vy += 1;
-        const sp = 680 / cam.z;
-        cam.x += vx * sp * dt;
-        cam.y += vy * sp * dt;
+        if (!glancing) {
+          let vx = 0;
+          let vy = 0;
+          if (keys.current.has("KeyA") || keys.current.has("ArrowLeft")) vx -= 1;
+          if (keys.current.has("KeyD") || keys.current.has("ArrowRight")) vx += 1;
+          if (keys.current.has("KeyW") || keys.current.has("ArrowUp")) vy -= 1;
+          if (keys.current.has("KeyS") || keys.current.has("ArrowDown")) vy += 1;
+          const sp = 680 / cam.z;
+          cam.x += vx * sp * dt;
+          cam.y += vy * sp * dt;
+        }
         sim.tick(dt);
+        if (glancing) {
+          const still = sim.selected.some((id) => {
+            const unit = sim.byId(id);
+            return !!unit && unit.alive && unit.team === 0 && !DEFS[unit.kind].building;
+          });
+          if (!still) {
+            viewRef.current = "tac";
+            setEye(false);
+          }
+        }
       }
-      clampCam(cam, rect.width, rect.height);
+      if (!glancing) clampCam(cam, rect.width, rect.height);
       const pr = pointer.current;
-      const world = screenToWorld(pr.x, pr.y, cam, rect.width, rect.height);
+      const world = screenToWorld(pr.x, pr.y, cam, rect.width, rect.height, world3d);
       let ghost = null;
-      if (sim.placeKind && modeRef.current === "play") {
+      if (sim.placeKind && modeRef.current === "play" && !glancing) {
         const spot = sim.snap(sim.placeKind, world.x, world.y);
         ghost = { kind: sim.placeKind, x: spot.x, y: spot.y, ok: sim.canPlace(0, sim.placeKind, spot.x, spot.y) && sim.credits[0] >= DEFS[sim.placeKind].cost };
       }
       const box =
-        pr.drag && pr.button === 0 && (!pr.touch || pickModeRef.current)
+        !glancing && pr.drag && pr.button === 0 && (!pr.touch || pickModeRef.current)
           ? {
               x0: pr.wx,
               y0: pr.wy,
@@ -284,7 +304,7 @@ export function Ionreach() {
               y1: world.y,
             }
           : null;
-      renderer.draw(ctx, sim, cam, rect.width, rect.height, ghost, box, modeRef.current === "intro");
+      world3d.frame(sim, cam, rect.width, rect.height, glancing ? "eye" : "tac", lookRef.current, ghost, box, modeRef.current === "intro", sim.shake);
       if (mini.width > 0) renderer.drawMinimap(mctx, sim, cam, rect.width, rect.height, modeRef.current === "intro");
       if (sim.uiDirty || now - hudAt > 140) {
         sim.uiDirty = false;
@@ -356,7 +376,7 @@ export function Ionreach() {
       if (modeRef.current !== "play" || !simRef.current) return;
       if (e.button === 1) return;
       const p = local(e);
-      const world = screenToWorld(p.x, p.y, camRef.current, p.w, p.h);
+      const world = screenToWorld(p.x, p.y, camRef.current, p.w, p.h, world3d);
       pointer.current = { x: p.x, y: p.y, down: true, sx: p.x, sy: p.y, wx: world.x, wy: world.y, drag: false, button: e.button, touch: e.pointerType === "touch" };
       canvas.setPointerCapture(e.pointerId);
     };
@@ -368,6 +388,14 @@ export function Ionreach() {
       const dx = p.x - pointer.current.sx;
       const dy = p.y - pointer.current.sy;
       if (Math.hypot(dx, dy) > 8) pointer.current.drag = true;
+      if (viewRef.current === "eye" && pointer.current.drag && pointer.current.button === 0) {
+        lookRef.current.yaw -= dx * 0.006;
+        lookRef.current.pitch = Math.max(-0.7, Math.min(0.55, lookRef.current.pitch - dy * 0.004));
+        pointer.current.sx = p.x;
+        pointer.current.sy = p.y;
+        return;
+      }
+      if (viewRef.current === "eye") return;
       if (pointer.current.drag && (pointer.current.button === 2 || (pointer.current.touch && !pickModeRef.current))) {
         camRef.current.x -= (p.x - pointer.current.sx) / camRef.current.z;
         camRef.current.y -= (p.y - pointer.current.sy) / camRef.current.z;
@@ -379,13 +407,18 @@ export function Ionreach() {
       if (!pointer.current.down || !simRef.current) return;
       const simNow = simRef.current;
       const p = local(e);
-      const world = screenToWorld(p.x, p.y, camRef.current, p.w, p.h);
+      const world = screenToWorld(p.x, p.y, camRef.current, p.w, p.h, world3d);
       const dragged = pointer.current.drag;
       const button = pointer.current.button;
       const touch = pointer.current.touch;
       pointer.current.down = false;
       pointer.current.drag = false;
       if (modeRef.current !== "play") return;
+      if (viewRef.current === "eye" && button === 0) {
+        if (!dragged && simNow.placeKind) simNow.placeAt(world.x, world.y);
+        else if (!dragged && simNow.attackArm) simNow.command(world.x, world.y, "amove");
+        return;
+      }
       if (button === 2) {
         if (dragged) return;
         if (simNow.placeKind) {
@@ -450,11 +483,15 @@ export function Ionreach() {
     const onContext = (e: Event) => e.preventDefault();
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      if (viewRef.current === "eye") {
+        lookRef.current.fov = Math.max(46, Math.min(85, lookRef.current.fov + (e.deltaY > 0 ? 3 : -3)));
+        return;
+      }
       const p = local(e as unknown as PointerEvent);
       const cam = camRef.current;
-      const before = screenToWorld(p.x, p.y, cam, p.w, p.h);
+      const before = screenToWorld(p.x, p.y, cam, p.w, p.h, world3d);
       cam.z = Math.max(0.55, Math.min(1.85, cam.z * (e.deltaY > 0 ? 0.9 : 1.11)));
-      const after = screenToWorld(p.x, p.y, cam, p.w, p.h);
+      const after = screenToWorld(p.x, p.y, cam, p.w, p.h, world3d);
       cam.x += before.x - after.x;
       cam.y += before.y - after.y;
     };
@@ -480,6 +517,21 @@ export function Ionreach() {
         pauseRef.current = !pauseRef.current;
         simNow.paused = pauseRef.current;
         simNow.uiDirty = true;
+        setHud(simNow.snapshot());
+      } else if (e.code === "KeyV") {
+        const unit = simNow.selected.map((id) => simNow.byId(id)).find((u) => u && u.alive && u.team === 0 && !DEFS[u.kind].building);
+        if (viewRef.current === "eye") {
+          viewRef.current = "tac";
+          setEye(false);
+          simNow.say("Tactical view.");
+        } else if (!unit) {
+          simNow.say("Select a soldier or a tank first.");
+        } else {
+          viewRef.current = "eye";
+          lookRef.current = { yaw: 0, pitch: -0.02, fov: 68 };
+          setEye(true);
+          simNow.say("First person. Drag to look. Right-click to order.");
+        }
         setHud(simNow.snapshot());
       } else if (e.code === "Space") {
         const f = simNow.focusPoint();
@@ -529,6 +581,8 @@ export function Ionreach() {
     return () => {
       alive = false;
       cancelAnimationFrame(raf);
+      world3d.dispose();
+      if (worldRef.current === world3d) worldRef.current = null;
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
@@ -634,6 +688,9 @@ export function Ionreach() {
     applyLoadout(sim);
     simRef.current = sim;
     camRef.current = { x: sim.pois.player.x + 160, y: sim.pois.player.y - 160, z: 0.92 };
+    viewRef.current = "tac";
+    lookRef.current = { yaw: 0, pitch: 0, fov: 68 };
+    setEye(false);
     modeRef.current = "intro";
     introRef.current = 0;
     pauseRef.current = false;
@@ -963,6 +1020,8 @@ export function Ionreach() {
                 <li>Hide this menu to watch the trailer behind it. Menu brings the list back.</li>
                 <li>In a fight, the top bar and the bottom dock hide together. Show panels brings them back.</li>
                 <li>Select on the battle bar draws a box. Shift-click adds. Drag pans when Select is off.</li>
+                <li>First person, or V, puts you in the eyes of a selected soldier or tank. Drag to look. Right-click still gives the order. Tactical brings the battlefield camera back.</li>
+                <li>Upgrading a barracks, bay, or strip changes the soldiers, tanks, and aircraft already in the field. Higher tiers are bigger, plated, and marked.</li>
                 <li>Show or hide Command, Selection, Map, and Powers under the map.</li>
                 <li>Q or A-move, then click, is attack-move. H holds. R repairs. X scraps a building.</li>
                 <li>Win by destroying the enemy command spire.</li>
@@ -1112,6 +1171,31 @@ export function Ionreach() {
               <button
                 type="button"
                 onClick={() => {
+                  const simNow = simRef.current;
+                  if (!simNow || modeRef.current !== "play") return;
+                  const unit = simNow.selected.map((id) => simNow.byId(id)).find((u) => u && u.alive && u.team === 0 && !DEFS[u.kind].building);
+                  if (viewRef.current === "eye") {
+                    viewRef.current = "tac";
+                    setEye(false);
+                    simNow.say("Tactical view.");
+                  } else if (!unit) {
+                    simNow.say("Select a soldier or a tank first.");
+                  } else {
+                    viewRef.current = "eye";
+                    lookRef.current = { yaw: 0, pitch: -0.02, fov: 68 };
+                    setEye(true);
+                    simNow.say("First person. Drag to look. Right-click to order.");
+                  }
+                  setHud(simNow.snapshot());
+                }}
+                aria-pressed={eye}
+                className={"min-h-9 border px-2 font-display text-xs " + (eye ? "border-ion bg-ion text-bg" : "border-line")}
+              >
+                {eye ? "Tactical" : "First person"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
                   pauseRef.current = !pauseRef.current;
                   if (simRef.current) {
                     simRef.current.paused = pauseRef.current;
@@ -1153,6 +1237,16 @@ export function Ionreach() {
             </header>
           <div className="relative min-h-0 flex-1">
             <canvas ref={canvasRef} className="absolute inset-0 h-full w-full touch-none" />
+            {eye && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div className="relative h-8 w-8">
+                  <span className="absolute left-1/2 top-0 h-2 w-px -translate-x-1/2 bg-white" />
+                  <span className="absolute bottom-0 left-1/2 h-2 w-px -translate-x-1/2 bg-white" />
+                  <span className="absolute left-0 top-1/2 h-px w-2 -translate-y-1/2 bg-white" />
+                  <span className="absolute right-0 top-1/2 h-px w-2 -translate-y-1/2 bg-white" />
+                </div>
+              </div>
+            )}
             <div className="pointer-events-none absolute inset-x-0 top-2 flex justify-center px-3">
               <div className="flex flex-col items-center gap-1">
                 {hud?.low && <p className="bg-ember px-3 py-1 font-display text-bg">Grid starved</p>}
