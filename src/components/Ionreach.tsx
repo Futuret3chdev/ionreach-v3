@@ -862,7 +862,6 @@ export function Ionreach() {
                           <Flag id={id} className="h-12 w-20 shrink-0" />
                           <span className="min-w-0 flex-1">
                             <span className="block truncate font-display text-lg">{chapters[0]?.country}</span>
-                            <span className="block text-xs text-muted">{chapters[0]?.theater}</span>
                           </span>
                         </button>
                         {on && fact && (
@@ -884,21 +883,31 @@ export function Ionreach() {
                               </div>
                             </dl>
                             <div className="mt-3 flex flex-col gap-2">
-                              {chapters.map((chapter, index, list) => {
+                              {(() => {
                                 void storyTick;
-                                const open = isOpen(list, index);
-                                return (
-                                  <article key={chapter.id} className="border border-line bg-[#101820] p-2">
-                                    <p className="font-display text-sm">{chapter.theater}</p>
-                                    <p className="mt-1 text-[13px] leading-snug text-fg/90">{STORIES[chapter.theater] ?? chapter.line}</p>
-                                    {!open && <p className="mt-1 text-[11px] text-muted">Sealed until the fight before it is held.</p>}
-                                    <div className="mt-2 flex gap-1">
-                                      <button type="button" disabled={!chapter.video} onClick={() => { if (!chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 border border-line px-2 font-display text-xs disabled:text-muted">Watch</button>
-                                      <button type="button" disabled={!open || !chapter.video} onClick={() => { if (!open || !chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 bg-ion px-2 font-display text-xs text-bg disabled:bg-line disabled:text-muted">Play</button>
-                                    </div>
-                                  </article>
-                                );
-                              })}
+                                let next = chapters.length - 1;
+                                for (let i = 0; i < chapters.length; i++) {
+                                  if (!isOpen(chapters, i + 1)) {
+                                    next = i;
+                                    break;
+                                  }
+                                }
+                                return chapters.map((chapter, index, list) => {
+                                  const open = isOpen(list, index);
+                                  const upcoming = index === next;
+                                  return (
+                                    <article key={chapter.id} className="border border-line bg-[#101820] p-2">
+                                      <p className="sticky top-0 z-20 bg-[#101820] py-1 font-display text-base text-fg">{chapter.theater}</p>
+                                      <p className={upcoming ? "mt-1 text-[13px] leading-snug text-[#6cb6ff]" : "mt-1 text-[13px] leading-snug text-fg/80"}>{STORIES[chapter.theater] ?? chapter.line}</p>
+                                      {!open && <p className="mt-1 text-[11px] text-muted">Sealed until the fight before it is held.</p>}
+                                      <div className="mt-2 flex gap-1">
+                                        <button type="button" disabled={!chapter.video} onClick={() => { if (!chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 border border-line px-2 font-display text-xs disabled:text-muted">Watch</button>
+                                        <button type="button" disabled={!open || !chapter.video} onClick={() => { if (!open || !chapter.video) return; setMenuTool(null); setBrief(chapter); }} className="min-h-8 bg-ion px-2 font-display text-xs text-bg disabled:bg-line disabled:text-muted">Play</button>
+                                      </div>
+                                    </article>
+                                  );
+                                });
+                              })()}
                             </div>
                           </div>
                         )}
