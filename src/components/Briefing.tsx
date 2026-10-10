@@ -36,16 +36,15 @@ export function Briefing({
   const [sound, setSound] = useState(false);
   const [active, setActive] = useState(-1);
   const [speaking, setSpeaking] = useState(false);
+  const [voiceNote, setVoiceNote] = useState("");
   const story = STORIES[chapter.theater] ?? chapter.beats.filter(Boolean).join(" ");
   const spoken = chapter.hudson ? `${story} ${chapter.hudson}` : story;
   const storyTokens = tokensOf(story);
   const hudsonTokens = tokensOf(chapter.hudson ?? "");
   const hudsonShift = storyTokens.reduce((n, token) => n + (token.word === null ? 0 : 1), 0);
 
-  const held = useRef<SpeechSynthesisUtterance[]>([]);
-  const stepRef = useRef(0);
-  const stopSpeak = useRef(false);
-  const [voiceNote, setVoiceNote] = useState("");
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const marksRef = useRef<number[]>([]);
 
   useEffect(() => {
     const box = scroller.current;
@@ -73,85 +72,60 @@ export function Briefing({
       else video.addEventListener("loadeddata", startVideo, { once: true });
     }
     return () => {
-      stopSpeak.current = true;
-      window.clearInterval(stepRef.current);
-      window.speechSynthesis?.cancel();
+      const audio = audioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.src = "";
+      }
     };
   }, [chapter.id, spoken]);
 
   function readAloud() {
-    const synth = window.speechSynthesis;
-    if (!synth) {
-      setVoiceNote("This phone has no voice.");
-      return;
-    }
-    if (speaking || synth.speaking) {
-      stopSpeak.current = true;
-      window.clearInterval(stepRef.current);
-      synth.cancel();
+    const video = videoRef.current;
+    let audio = audioRef.current;
+    if (audio && !audio.paused) {
+      audio.pause();
       setSpeaking(false);
-      setActive(-1);
-      const video = videoRef.current;
       if (video) void video.play().catch(() => undefined);
       return;
     }
-    stopSpeak.current = false;
-    setVoiceNote("");
-    const video = videoRef.current;
+    if (!audio) {
+      audio = new Audio();
+      audioRef.current = audio;
+      audio.ontimeupdate = () => {
+        const marks = marksRef.current;
+        if (!marks.length) return;
+        const t = audio!.currentTime + 0.08;
+        let index = 0;
+        for (let i = 0; i < marks.length; i++) if (marks[i] <= t) index = i;
+        setActive(index);
+      };
+      audio.onended = () => {
+        setSpeaking(false);
+        const film = videoRef.current;
+        if (film) void film.play().catch(() => undefined);
+      };
+    }
     if (video) {
       video.muted = true;
       video.pause();
     }
     setSound(false);
-    const parts = spoken.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((part) => part.trim()).filter(Boolean) ?? [spoken];
-    held.current = [];
-    const words = spoken.match(/\S+/g) ?? [];
-    let local = 0;
+    setVoiceNote("");
     setActive(0);
-    window.clearInterval(stepRef.current);
-    stepRef.current = window.setInterval(() => {
-      local += 1;
-      if (local >= words.length) {
-        window.clearInterval(stepRef.current);
-        return;
-      }
-      setActive(local);
-    }, 370);
-    let heard = false;
-    const queue = (index: number) => {
-      if (stopSpeak.current) return;
-      const text = parts[index];
-      if (!text) {
-        setSpeaking(false);
-        const film = videoRef.current;
-        if (film) void film.play().catch(() => undefined);
-        return;
-      }
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = "en-US";
-      utter.rate = 0.96;
-      utter.volume = 1;
-      held.current.push(utter);
-      utter.onstart = () => {
-        heard = true;
-        setVoiceNote("");
-      };
-      utter.onend = () => {
-        if (!stopSpeak.current) queue(index + 1);
-      };
-      utter.onerror = () => {
-        if (stopSpeak.current) return;
-        setSpeaking(false);
-        setVoiceNote("No voice. Switch off silent mode, then tap Read.");
-      };
-      synth.speak(utter);
-      if (synth.paused) synth.resume();
-    };
     setSpeaking(true);
-    queue(0);
-    window.setTimeout(() => {
-      if (!heard && !stopSpeak.current) setVoiceNote("No voice. Switch off silent mode, then tap Read.");
-    }, 1200);
+    marksRef.current = [];
+    void fetch(`/media/voice/${chapter.id}.json`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((marks: number[]) => {
+        marksRef.current = marks;
+      })
+      .catch(() => undefined);
+    audio.src = `/media/voice/${chapter.id}.mp3?v=voice1`;
+    void audio.play().catch(() => {
+      setSpeaking(false);
+      setVoiceNote("Tap Read again.");
+    });
   }
 
   function play() {
@@ -167,7 +141,6 @@ export function Briefing({
     setSound(next);
     const video = videoRef.current;
     if (video) video.muted = !next;
-    if (next) window.speechSynthesis?.cancel();
   }
 
   function paint(token: Token, index: number) {
